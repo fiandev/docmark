@@ -93,9 +93,9 @@ void main() {
   });
 
   group('lock and visibility', () {
-    test('a locked element refuses transforms but stays selectable', () {
+    test('a locked element refuses only geometry changes', () {
       final controller = build();
-      final element = controller.addText()!;
+      final element = controller.addText(content: 'Draft')!;
       final rect = element.rect;
       final rotation = element.rotationDeg;
 
@@ -104,17 +104,49 @@ void main() {
       controller.moveBy(element.id, const NormalizedOffset(0.1, 0.1));
       controller.setRotation(element.id, 90);
       controller.setOpacity(element.id, 0.2);
+      controller.updateText(
+        element.id,
+        content: 'Approved',
+        colorArgb: 0xFF00FF00,
+        rotationDeg: 45,
+      );
 
-      final locked = controller.config.elements.single;
+      final locked = controller.config.elements.single as TextWatermark;
       expect(locked.locked, isTrue);
       expect(locked.rect, rect);
       expect(locked.rotationDeg, rotation);
-      expect(locked.opacity, 1);
+      // Content, colour and opacity are appearance, not geometry.
+      expect(locked.content, 'Approved');
+      expect(locked.colorArgb, 0xFF00FF00);
+      expect(locked.opacity, 0.2);
       expect(controller.selectedId, element.id);
 
       controller.setLocked(element.id, false);
       controller.moveBy(element.id, const NormalizedOffset(0.1, 0.1));
       expect(controller.config.elements.single.rect, isNot(rect));
+    });
+
+    test('a locked image keeps crop and rotation but allows appearance', () {
+      final controller = build();
+      final element = controller.addImage('asset-1')!;
+
+      controller.setLocked(element.id, true);
+      controller.applyCrop(
+        element.id,
+        const CropRect.fromLTWH(0.1, 0.2, 0.5, 0.4),
+      );
+      controller.updateImage(
+        element.id,
+        rotationDeg: 30,
+        opacity: 0.4,
+        lockAspect: false,
+      );
+
+      final image = controller.config.elements.single as ImageWatermark;
+      expect(image.crop, isNull);
+      expect(image.rotationDeg, element.rotationDeg);
+      expect(image.opacity, 0.4);
+      expect(image.lockAspect, isFalse);
     });
 
     test('visibility only flips the flag', () {

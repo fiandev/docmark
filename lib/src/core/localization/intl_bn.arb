@@ -356,5 +356,12 @@
   "settings_biometrics": "বায়োমেট্রিক দিয়ে আনলক করুন",
   "settings_biometricsBody": "পিনের বদলে আপনার ফিঙ্গারপ্রিন্ট বা মুখ ব্যবহার করুন।",
   "settings_biometricsEnabled": "বায়োমেট্রিক আনলক চালু আছে।",
-  "settings_biometricsOff": "বায়োমেট্রিক আনলক বন্ধ আছে।"
+  "settings_biometricsOff": "বায়োমেট্রিক আনলক বন্ধ আছে।",
+  "editor_lockedHint": "অবস্থান ও আকার লক করা আছে। এই উপাদান সরাতে, আকার বদলাতে, ঘোরাতে বা ক্রপ করতে আনলক করুন।",
+  "settings_resetLock": "অ্যাপ লক রিসেট করুন",
+  "settings_resetLockBody": "অ্যাপ আনলক করতে না পারলে এটি ব্যবহার করুন। পিন মুছে যাবে; আপনার ডকুমেন্ট এনক্রিপ্টেড থাকবে।",
+  "settings_resetLockConfirm": "অ্যাপ লক রিসেট করে পিন মুছে ফেলবেন? আপনার ডকুমেন্ট রাখা হবে।",
+  "settings_resetLockAction": "রিসেট",
+  "settings_resetLockDone": "অ্যাপ লক রিসেট হয়েছে।",
+  "settings_resetLockFailed": "অ্যাপ লক রিসেট করা যায়নি।"
 }

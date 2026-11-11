@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:docmark/src/data/services/media/image_media_normalizer.dart';
 import 'package:docmark/src/domain/entities/image_format.dart';
 import 'package:docmark/src/domain/services/format_probe.dart';
+import 'package:docmark/src/domain/services/media_normalizer.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 
@@ -80,6 +81,22 @@ void main() {
       );
 
       expect(probe.format, ImageFormat.unknown);
+    });
+
+    test('sizeForPage prefers a page size and falls back to the first', () {
+      const probe = MediaProbe(
+        format: ImageFormat.pdf,
+        width: 612,
+        height: 792,
+        pageCount: 2,
+        pageSizesPt: [
+          SizePt(width: 612, height: 792),
+          SizePt(width: 400, height: 600),
+        ],
+      );
+
+      expect(probe.sizeForPage(1), const SizePt(width: 400, height: 600));
+      expect(probe.sizeForPage(9), const SizePt(width: 612, height: 792));
     });
   });
 }

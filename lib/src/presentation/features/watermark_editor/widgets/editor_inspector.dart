@@ -48,6 +48,10 @@ class EditorInspector extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (element.locked) ...[
+            const _LockedHint(),
+            SizedBox(height: context.dimensions.space.s8),
+          ],
           _ElementActions(controller: controller, element: element),
           _PositionSection(controller: controller, element: element),
           if (element is TextWatermark)
@@ -169,6 +173,34 @@ class _PositionSection extends StatelessWidget {
             },
           ),
         ],
+      ],
+    );
+  }
+}
+
+/// Explains why the geometry controls look inert on a locked element.
+///
+/// Content and appearance edits still work; only position, size, rotation
+/// and crop are held back.
+class _LockedHint extends StatelessWidget {
+  const _LockedHint();
+
+  @override
+  Widget build(BuildContext context) {
+    final dims = context.dimensions;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          Icons.lock_outline,
+          size: dims.size.iconLarge,
+          color: context.color.text.muted,
+        ),
+        SizedBox(width: dims.space.s8),
+        Expanded(
+          child: BodySmallText.muted(context.locale.editor_lockedHint),
+        ),
       ],
     );
   }

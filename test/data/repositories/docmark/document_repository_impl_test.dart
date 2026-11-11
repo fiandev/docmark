@@ -79,6 +79,30 @@ void main() {
       expect(entity.pageSizes.first.widthPt, 612);
     });
 
+    test('records each mixed-size PDF page with its own dimensions', () async {
+      final repository = harness.documents();
+
+      final entity = dataOf(
+        await repository.importDocument(
+          ImportRequest(
+            source: ImportSource.filePicker,
+            fileName: 'mixed.pdf',
+            bytes: pdfBytes('mixed'),
+          ),
+        ),
+      );
+
+      expect(entity.pageSizes.map((page) => page.widthPt), [612, 400, 300]);
+      expect(entity.pageSizes.map((page) => page.heightPt), [792, 600, 500]);
+
+      // The same per-page sizes survive a round trip through storage.
+      final fetched = dataOf(await repository.get(entity.id))!;
+      expect(fetched.pageSizes, entity.pageSizes);
+
+      final listed = dataOf(await repository.list()).single;
+      expect(listed.pageSizes, entity.pageSizes);
+    });
+
     test('honours the selected PDF pages', () async {
       final repository = harness.documents();
 
@@ -98,6 +122,8 @@ void main() {
       expect(entity.pageSizes.map((page) => page.index), [1, 2]);
       expect(entity.pageSourceIndices, [1, 2]);
       expect(entity.selectedPageCount, 2);
+      // A subset keeps the selected pages' own sizes too.
+      expect(entity.pageSizes.map((page) => page.widthPt), [400, 300]);
 
       expect(dataOf(await repository.readPage(entity.id, 1)), isNotEmpty);
       expect(

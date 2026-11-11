@@ -44,6 +44,7 @@ final class FakeAppLockService implements AppLockService {
   int disableCalls = 0;
   int changePinCalls = 0;
   int updateSettingsCalls = 0;
+  int resetCalls = 0;
   Duration? lastGrace;
   AppLockFailure? failNext;
 
@@ -180,6 +181,7 @@ final class FakeAppLockService implements AppLockService {
   }) async {
     if (!confirmed) return const Error(AppLockResetNotConfirmed());
 
+    resetCalls += 1;
     pin = null;
     _emit(const AppLockState(
       status: LockStatus.disabled,

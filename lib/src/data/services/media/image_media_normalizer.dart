@@ -10,7 +10,7 @@ import '../../../domain/services/media_normalizer.dart';
 /// Decodes with `package:image`, bakes EXIF orientation, and re-encodes as
 /// PNG so an image watermark keeps its alpha channel.
 ///
-/// PDFs are not images: [probe] reads their page count and first-page size
+/// PDFs are not images: [probe] reads their page count and per-page sizes
 /// from pdfrx, and [normalizeAsPng] refuses them.
 final class ImageMediaNormalizer implements MediaNormalizerService {
   const ImageMediaNormalizer();
@@ -73,13 +73,18 @@ final class ImageMediaNormalizer implements MediaNormalizerService {
         if (document.pages.isEmpty) {
           throw const FormatException('The PDF has no pages.');
         }
-        final first = document.pages.first;
+        final pageSizes = <SizePt>[
+          for (final page in document.pages)
+            SizePt(width: page.width, height: page.height),
+        ];
+        final first = pageSizes.first;
 
         return MediaProbe(
           format: ImageFormat.pdf,
           width: first.width.round(),
           height: first.height.round(),
-          pageCount: document.pages.length,
+          pageCount: pageSizes.length,
+          pageSizesPt: pageSizes,
         );
       } finally {
         await document.dispose();

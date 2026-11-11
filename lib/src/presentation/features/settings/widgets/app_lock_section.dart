@@ -74,6 +74,16 @@ class AppLockSection extends ConsumerWidget {
             onTap: () => unawaited(_changePin(context, ref)),
           ),
           _GracePeriodTile(policy: state.policy),
+          ListTile(
+            key: const ValueKey<String>('settings-reset-lock'),
+            leading: Icon(
+              Icons.restart_alt,
+              color: context.color.status.danger,
+            ),
+            title: LabelText(l10n.settings_resetLock),
+            subtitle: BodySmallText.muted(l10n.settings_resetLockBody),
+            onTap: () => unawaited(_resetLock(context, ref)),
+          ),
         ],
       ],
     );
@@ -165,6 +175,42 @@ class AppLockSection extends ConsumerWidget {
     );
     if (!context.mounted) return;
     _report(context, l10n, result, l10n.settings_pinChanged);
+  }
+
+  /// Recovery path for a user who can no longer unlock: the confirmation is
+  /// mandatory, and the service is told it may delete the lock blob.
+  Future<void> _resetLock(BuildContext context, WidgetRef ref) async {
+    final l10n = context.locale;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.settings_resetLock),
+        content: BodySmallText(l10n.settings_resetLockConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.common_cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.settings_resetLockAction),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    final result = await ref
+        .read(appLockServiceProvider)
+        .resetLockData(confirmed: true);
+    if (!context.mounted) return;
+
+    switch (result) {
+      case Success():
+        _showSnack(context, l10n.settings_resetLockDone);
+      case Error():
+        _showSnack(context, l10n.settings_resetLockFailed);
+    }
   }
 }
 

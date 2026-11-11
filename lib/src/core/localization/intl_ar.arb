@@ -356,5 +356,12 @@
   "settings_biometrics": "فتح القفل بالبصمة",
   "settings_biometricsBody": "استخدم بصمة إصبعك أو وجهك بدلًا من رمز PIN.",
   "settings_biometricsEnabled": "فتح القفل بالبصمة مُفعّل.",
-  "settings_biometricsOff": "فتح القفل بالبصمة مُعطّل."
+  "settings_biometricsOff": "فتح القفل بالبصمة مُعطّل.",
+  "editor_lockedHint": "الموضع والحجم مقفلان. أزل القفل للنقل أو تغيير الحجم أو التدوير أو القص.",
+  "settings_resetLock": "إعادة تعيين قفل التطبيق",
+  "settings_resetLockBody": "استخدم هذا إذا لم تعد قادرًا على فتح التطبيق. ستُزال شفرة PIN وتبقى مستنداتك مشفّرة.",
+  "settings_resetLockConfirm": "إعادة تعيين قفل التطبيق وإزالة شفرة PIN؟ سيتم الاحتفاظ بمستنداتك.",
+  "settings_resetLockAction": "إعادة تعيين",
+  "settings_resetLockDone": "تمت إعادة تعيين قفل التطبيق.",
+  "settings_resetLockFailed": "تعذّرت إعادة تعيين قفل التطبيق."
 }

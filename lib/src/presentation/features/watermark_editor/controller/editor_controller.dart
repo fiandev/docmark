@@ -276,7 +276,8 @@ final class EditorController extends ChangeNotifier {
 
   // --- Shared properties ---------------------------------------------
 
-  /// Locked elements can still be selected and toggled; gestures skip them.
+  /// Locked elements can still be selected, toggled, re-typed and restyled;
+  /// only position, size, rotation and crop gestures skip them.
   void setLocked(String id, bool locked) {
     final index = _indexOf(id);
     if (index < 0) return;
@@ -302,20 +303,20 @@ final class EditorController extends ChangeNotifier {
   }
 
   void setOpacity(String id, double opacity) {
-    _transform(id, (element) {
+    _edit(id, (element) {
       return element.copyWith(opacity: opacity.clamp(0.0, 1.0).toDouble());
     });
   }
 
   void setRotation(String id, double degrees) {
-    _transform(id, (element) {
+    _transformGeometry(id, (element) {
       return element.copyWith(rotationDeg: _normalizeDegrees(degrees));
     });
   }
 
   /// Moves [id] by a normalized delta, clamped to the page.
   void moveBy(String id, NormalizedOffset delta) {
-    _transform(id, (element) {
+    _transformGeometry(id, (element) {
       return element.copyWith(
         rect: WatermarkGeometry.translate(element.rect, delta),
       );
@@ -324,7 +325,7 @@ final class EditorController extends ChangeNotifier {
 
   /// Writes a rect computed by the gesture layer.
   void setRect(String id, NormalizedRect rect) {
-    _transform(id, (element) {
+    _transformGeometry(id, (element) {
       return element.copyWith(rect: rect.clampToPage());
     });
   }
@@ -347,7 +348,9 @@ final class EditorController extends ChangeNotifier {
     BackgroundSpec? background,
     bool clearBackground = false,
   }) {
-    _transform(id, (element) {
+    // Content and appearance stay editable on a locked element; only the
+    // rotation field is geometry and therefore ignored while locked.
+    _edit(id, (element) {
       if (element is! TextWatermark) return element;
 
       return element.copyWith(
@@ -358,8 +361,9 @@ final class EditorController extends ChangeNotifier {
         bold: bold,
         italic: italic,
         align: align,
-        rotationDeg:
-            rotationDeg == null ? null : _normalizeDegrees(rotationDeg),
+        rotationDeg: element.locked || rotationDeg == null
+            ? null
+            : _normalizeDegrees(rotationDeg),
         opacity: opacity,
         outline: outline,
         clearOutline: clearOutline,
@@ -371,6 +375,8 @@ final class EditorController extends ChangeNotifier {
 
   // --- Image appearance ----------------------------------------------
 
+  /// Appearance stays editable while locked. Rotation and crop are geometry
+  /// changes, so they are ignored until the element is unlocked.
   void updateImage(
     String id, {
     double? opacity,
@@ -379,16 +385,17 @@ final class EditorController extends ChangeNotifier {
     CropRect? crop,
     bool clearCrop = false,
   }) {
-    _transform(id, (element) {
+    _edit(id, (element) {
       if (element is! ImageWatermark) return element;
 
       return element.copyWith(
         opacity: opacity,
-        rotationDeg:
-            rotationDeg == null ? null : _normalizeDegrees(rotationDeg),
+        rotationDeg: element.locked || rotationDeg == null
+            ? null
+            : _normalizeDegrees(rotationDeg),
         lockAspect: lockAspect,
-        crop: crop,
-        clearCrop: clearCrop,
+        crop: element.locked ? null : crop,
+        clearCrop: element.locked ? false : clearCrop,
       );
     });
   }
@@ -523,11 +530,11 @@ final class EditorController extends ChangeNotifier {
     _commit(_config.copyWith(elements: elements));
   }
 
-  /// Applies [transform] to the element with [id] unless it is locked.
+  /// Applies [transform] to the element with [id] without any lock guard.
   ///
-  /// Locking is enforced here as well as in the gesture layer, so a stale
-  /// panel or a keyboard nudge cannot move a locked element either.
-  void _transform(
+  /// Locking protects position and size, not what the element says or looks
+  /// like: a locked element can still be re-typed, recoloured or faded.
+  void _edit(
     String id,
     WatermarkElement Function(WatermarkElement element) transform,
   ) {
@@ -535,14 +542,28 @@ final class EditorController extends ChangeNotifier {
     if (index < 0) return;
 
     final current = _config.elements[index];
-    if (current.locked) return;
-
     final next = transform(current);
     if (next == current) return;
 
     final elements = List<WatermarkElement>.of(_config.elements);
     elements[index] = next;
     _commit(_config.copyWith(elements: elements));
+  }
+
+  /// Applies a geometry [transform] unless the element is locked.
+  ///
+  /// Locking is enforced here as well as in the gesture layer, so a stale
+  /// panel or a keyboard nudge cannot move, resize, rotate or crop a locked
+  /// element either.
+  void _transformGeometry(
+    String id,
+    WatermarkElement Function(WatermarkElement element) transform,
+  ) {
+    final index = _indexOf(id);
+    if (index < 0) return;
+    if (_config.elements[index].locked) return;
+
+    _edit(id, transform);
   }
 
   void _commit(WatermarkConfig next, {bool force = false}) {

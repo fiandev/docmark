@@ -136,6 +136,31 @@ void main() {
       expect(service.updateSettingsCalls, 1);
       expect(service.state.biometricsEnabled, isTrue);
     });
+
+    testWidgets('reset asks first, then clears the lock through the service', (
+      tester,
+    ) async {
+      final service = FakeAppLockService(
+        enabled: true,
+        initialPin: '123456',
+      );
+
+      await pumpSettings(tester, service: service);
+      await tester.scrollUntilVisible(find.text('Reset App Lock'), 200);
+      await tester.tap(find.text('Reset App Lock'));
+      await tester.pumpAndSettle();
+
+      expect(service.resetCalls, 0);
+      expect(find.text('Reset App Lock and remove the PIN? '
+          'Your documents are kept.'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Reset'));
+      await tester.pumpAndSettle();
+
+      expect(service.resetCalls, 1);
+      expect(service.state.status, LockStatus.disabled);
+      expect(find.text('App Lock is off'), findsOneWidget);
+    });
   });
 
   group('storage management', () {

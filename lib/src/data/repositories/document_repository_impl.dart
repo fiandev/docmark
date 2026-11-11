@@ -307,17 +307,21 @@ final class DocumentRepositoryImpl extends Repository
       }
     }
 
-    final width = (probe.width ?? _a4WidthPt).toDouble();
-    final height = (probe.height ?? _a4HeightPt).toDouble();
+    final fallbackWidth = (probe.width ?? _a4WidthPt).toDouble();
+    final fallbackHeight = (probe.height ?? _a4HeightPt).toDouble();
 
     return indexes
-        .map(
-          (index) => DocumentPage(
+        .map((index) {
+          // Each selected page keeps its own MediaBox size; a mixed-size PDF
+          // must not inherit the first page's dimensions.
+          final size = probe.sizeForPage(index);
+
+          return DocumentPage(
             index: index,
-            widthPt: width,
-            heightPt: height,
-          ),
-        )
+            widthPt: size?.width ?? fallbackWidth,
+            heightPt: size?.height ?? fallbackHeight,
+          );
+        })
         .toList();
   }
 

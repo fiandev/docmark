@@ -116,10 +116,19 @@ final class _StaticKeyManager implements KeyManager {
 
 /// Detects real file signatures and reports fixed dimensions. The point
 /// is the repository's page/asset bookkeeping, not image decoding.
+///
+/// PDF pages deliberately differ so a mixed-size import can be asserted.
 final class ProbeOnlyNormalizer implements MediaNormalizerService {
   @override
   Future<MediaProbe> probe(Uint8List bytes) async {
     final format = detectFormat(bytes);
+    final pageSizes = format == ImageFormat.pdf
+        ? const <SizePt>[
+            SizePt(width: 612, height: 792),
+            SizePt(width: 400, height: 600),
+            SizePt(width: 300, height: 500),
+          ]
+        : const <SizePt>[];
 
     return MediaProbe(
       format: format,
@@ -127,6 +136,7 @@ final class ProbeOnlyNormalizer implements MediaNormalizerService {
       height: format == ImageFormat.pdf ? 792 : 600,
       hasAlpha: format == ImageFormat.png,
       pageCount: format == ImageFormat.pdf ? 3 : null,
+      pageSizesPt: pageSizes,
     );
   }
 

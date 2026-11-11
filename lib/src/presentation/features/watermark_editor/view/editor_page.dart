@@ -74,12 +74,15 @@ class _EditorPageState extends ConsumerState<EditorPage> {
       session.controller.addListener(_onDraftChanged);
     }
 
-    // The preset handoff is a one-shot: consume it once the draft is open.
+    // The hand-offs are one-shot: consume them once the draft is open.
     // The clear waits for a frame so no provider is written during build.
-    if (!_pendingCleared && session.appliedPresetId != null) {
+    if (!_pendingCleared &&
+        (session.appliedPresetId != null || session.appliedPendingConfig)) {
       _pendingCleared = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) clearPendingPresetId(ref);
+        if (!mounted) return;
+        clearPendingPresetId(ref);
+        clearPendingWatermarkConfig(ref);
       });
     }
 

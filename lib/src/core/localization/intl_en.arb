@@ -532,5 +532,12 @@
     "settings_biometrics": "Unlock with biometrics",
     "settings_biometricsBody": "Use your fingerprint or face instead of the PIN.",
     "settings_biometricsEnabled": "Biometric unlock is on.",
-    "settings_biometricsOff": "Biometric unlock is off."
+    "settings_biometricsOff": "Biometric unlock is off.",
+    "editor_lockedHint": "Position and size are locked. Unlock to move, resize, rotate or crop this element.",
+    "settings_resetLock": "Reset App Lock",
+    "settings_resetLockBody": "Use this if you can no longer unlock the app. The PIN is removed; your documents stay encrypted.",
+    "settings_resetLockConfirm": "Reset App Lock and remove the PIN? Your documents are kept.",
+    "settings_resetLockAction": "Reset",
+    "settings_resetLockDone": "App Lock was reset.",
+    "settings_resetLockFailed": "App Lock could not be reset."
 }

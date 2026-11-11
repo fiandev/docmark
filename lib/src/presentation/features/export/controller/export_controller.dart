@@ -28,19 +28,36 @@ final class ExportedFile {
   final String fileName;
 }
 
-/// Everything one export produced, after the encrypted copy was recorded.
+/// Everything one export produced, before it is written to its destination.
+///
+/// The encrypted copy and history row are created per file only once that
+/// file has actually been saved or shared; until then [vaultRefs] and
+/// [vaultRef] are null.
 final class ExportBundle {
-  const ExportBundle({
-    required this.files,
-    required this.vaultRef,
-  });
+  ExportBundle({required this.files})
+    : vaultRefs = List<AssetRef?>.filled(files.length, null),
+      _recorded = List<bool>.filled(files.length, false);
 
   final List<ExportedFile> files;
 
-  /// The encrypted copy kept in the vault, for the history row.
-  final AssetRef? vaultRef;
+  /// The encrypted preview reference per file, filled in when the file's
+  /// write succeeds and its history row is recorded.
+  final List<AssetRef?> vaultRefs;
+
+  final List<bool> _recorded;
+
+  /// The first file's encrypted copy, for single-file compatibility.
+  AssetRef? get vaultRef => vaultRefs.isEmpty ? null : vaultRefs.first;
 
   RenderResult get primary => files.first.result;
+
+  bool isRecorded(int index) {
+    return index >= 0 && index < _recorded.length && _recorded[index];
+  }
+
+  void markRecorded(int index) {
+    if (index >= 0 && index < _recorded.length) _recorded[index] = true;
+  }
 }
 
 /// Drives one export from render to vault, history, save and share.
@@ -98,8 +115,9 @@ final class ExportController {
   Future<Uint8List> thumbnail(int pageIndex) =>
       preview(pageIndex, maxWidth: 160);
 
-  /// Renders [pages] in [format], writes the encrypted copy, and records
-  /// the history row.
+  /// Renders [pages] in [format]. Nothing is written and no history row
+  /// exists yet: the encrypted copy and its row are created per file by
+  /// [save] or [share] once that file has actually left the app.
   Future<ExportBundle> exportDocument({
     required ImageFormat format,
     required double jpegQuality,
@@ -124,23 +142,23 @@ final class ExportController {
       throw const ExportException('empty-output');
     }
 
-    final vaultRef = await _persist(files.first.result);
-    // The history row exists now; the History and Home lists are stale.
-    _onExported?.call();
-
-    return ExportBundle(files: files, vaultRef: vaultRef);
+    return ExportBundle(files: files);
   }
 
   /// Writes every file in [bundle] to a user-visible directory.
+  ///
+  /// Each file is recorded only after its own write succeeds, so a failed
+  /// save never leaves a "completed" row behind.
   Future<List<String>> save(ExportBundle bundle) async {
     final paths = <String>[];
-    for (final file in bundle.files) {
-      paths.add(
-        await _fileWriter.saveToDevice(
-          bytes: file.result.bytes,
-          fileName: file.fileName,
-        ),
+    for (var index = 0; index < bundle.files.length; index++) {
+      final file = bundle.files[index];
+      final path = await _fileWriter.saveToDevice(
+        bytes: file.result.bytes,
+        fileName: file.fileName,
       );
+      paths.add(path);
+      await _recordFile(bundle, index);
     }
 
     return paths;
@@ -149,8 +167,8 @@ final class ExportController {
   /// Hands every file in [bundle] to the platform share sheet.
   ///
   /// The staged files are plaintext, so they are deleted once the sheet
-  /// returns — success or failure. The `finally` is what guarantees the
-  /// copy does not outlive the share.
+  /// returns — success or failure. History is recorded only after the sheet
+  /// returned successfully, one row per file.
   Future<void> share(ExportBundle bundle, {required String subject}) async {
     final paths = <String>[];
     try {
@@ -164,6 +182,10 @@ final class ExportController {
       }
 
       await _fileWriter.shareFiles(paths: paths, subject: subject);
+
+      for (var index = 0; index < bundle.files.length; index++) {
+        await _recordFile(bundle, index);
+      }
     } finally {
       for (final path in paths) {
         await _fileWriter.deleteTempFile(path);
@@ -221,11 +243,21 @@ final class ExportController {
     return files;
   }
 
-  Future<AssetRef> _persist(RenderResult primary) async {
-    final ref = await _vault.put(
-      bytes: primary.bytes,
-      extension: primary.format.fileExtension,
-    );
+  /// Stores one file's encrypted preview and records its history row.
+  ///
+  /// Skipped when this bundle already recorded [index]: saving and then
+  /// sharing the same output leaves one row per file, not two.
+  Future<void> _recordFile(ExportBundle bundle, int index) async {
+    if (bundle.isRecorded(index)) return;
+
+    final file = bundle.files[index];
+    final reference =
+        bundle.vaultRefs[index] ??
+        await _vault.put(
+          bytes: file.result.bytes,
+          extension: file.result.format.fileExtension,
+        );
+    bundle.vaultRefs[index] = reference;
 
     final recorded = await _history.record(
       HistoryEntryEntity(
@@ -234,7 +266,7 @@ final class ExportController {
         createdAt: _clock(),
         status: HistoryStatus.completed,
         documentId: _request.document.id,
-        processedRef: ref,
+        processedRef: reference,
         watermarkConfigJson: _request.config.toJsonString(),
       ),
     );
@@ -243,7 +275,9 @@ final class ExportController {
       throw const ExportException('history-write-failed');
     }
 
-    return ref;
+    bundle.markRecorded(index);
+    // The History and Home lists are stale as soon as a row exists.
+    _onExported?.call();
   }
 
   Future<Uint8List> _readPage(int pageIndex) async {
