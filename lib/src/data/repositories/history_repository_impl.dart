@@ -82,15 +82,19 @@ final class HistoryRepositoryImpl extends Repository
         if (row == null) throw _MissingEntry(entryId);
         final references = _referencesOf(row.toEntity());
 
-        // Claim release first, then delete, so a shared asset survives.
-        await _images.removeLinks(
-          ownerType: WatermarkAssetStore.historyOwner,
-          ownerId: entryId,
-        );
+        // Rows and claims go first, inside one transaction. The vault bytes
+        // follow: if that second step fails, the entry is already gone from
+        // the UI and the leftover file is unreachable garbage.
+        await _database.transaction(() async {
+          await _history.delete(entryId);
+          await _images.removeLinks(
+            ownerType: WatermarkAssetStore.historyOwner,
+            ownerId: entryId,
+          );
+        });
         for (final reference in references) {
           await _images.deleteRefIfUnreferenced(reference);
         }
-        await _history.delete(entryId);
 
         return Unit.value;
       },
@@ -106,11 +110,15 @@ final class HistoryRepositoryImpl extends Repository
         for (final row in rows) ..._referencesOf(row.toEntity()),
       };
 
-      await _images.removeLinksOfType(WatermarkAssetStore.historyOwner);
+      // Same order as a single delete: rows and claims commit first, then
+      // the now-unreferenced blobs are erased.
+      await _database.transaction(() async {
+        await _history.deleteAll();
+        await _images.removeLinksOfType(WatermarkAssetStore.historyOwner);
+      });
       for (final reference in references) {
         await _images.deleteRefIfUnreferenced(reference);
       }
-      await _history.deleteAll();
 
       return Unit.value;
     });

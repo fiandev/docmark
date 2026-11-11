@@ -1,7 +1,7 @@
-import 'package:flutter_template/src/core/gen/l10n/app_localizations_en.dart';
-import 'package:flutter_template/src/domain/failures/business_failure.dart';
-import 'package:flutter_template/src/presentation/core/failure/business_failure_ui_mapper.dart';
-import 'package:flutter_template/src/presentation/core/failure/failure_ui_model.dart';
+import 'package:docmark/src/core/gen/l10n/app_localizations_en.dart';
+import 'package:docmark/src/domain/failures/business_failure.dart';
+import 'package:docmark/src/presentation/core/failure/business_failure_ui_mapper.dart';
+import 'package:docmark/src/presentation/core/failure/failure_ui_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -100,7 +100,7 @@
     "failureUnexpected": "Something went wrong.",
     "retry": "Try again",
     "signInAgain": "Sign in again",
-    "appTitle": "Flutter Template",
+    "appTitle": "DocMark",
     "somethingWentWrong": "Something went wrong.",
     "common_home": "Home",
     "common_presets": "Presets",
@@ -512,5 +512,32 @@
     "settings_allDataDeleted": "All app data deleted.",
     "settings_privacyLocal": "Every watermark is added on this device. Nothing is uploaded.",
     "settings_privacyEncrypted": "Documents, presets and previews stay encrypted at rest in DocMark's private storage.",
-    "settings_privacyExport": "Exported files leave DocMark's protection. Share them only with people you trust."
+    "settings_privacyExport": "Exported files leave DocMark's protection. Share them only with people you trust.",
+    "export_pageNumber": "Page {page}",
+    "@export_pageNumber": {
+        "placeholders": {
+            "page": {
+                "type": "int"
+            }
+        }
+    },
+    "export_qualityPercent": "{percent}%",
+    "@export_qualityPercent": {
+        "placeholders": {
+            "percent": {
+                "type": "int"
+            }
+        }
+    },
+    "settings_biometrics": "Unlock with biometrics",
+    "settings_biometricsBody": "Use your fingerprint or face instead of the PIN.",
+    "settings_biometricsEnabled": "Biometric unlock is on.",
+    "settings_biometricsOff": "Biometric unlock is off.",
+    "editor_lockedHint": "Position and size are locked. Unlock to move, resize, rotate or crop this element.",
+    "settings_resetLock": "Reset App Lock",
+    "settings_resetLockBody": "Use this if you can no longer unlock the app. The PIN is removed; your documents stay encrypted.",
+    "settings_resetLockConfirm": "Reset App Lock and remove the PIN? Your documents are kept.",
+    "settings_resetLockAction": "Reset",
+    "settings_resetLockDone": "App Lock was reset.",
+    "settings_resetLockFailed": "App Lock could not be reset."
 }

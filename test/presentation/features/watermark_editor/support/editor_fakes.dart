@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 
-import 'package:flutter_template/src/core/base/result.dart';
-import 'package:flutter_template/src/core/base/unit.dart';
-import 'package:flutter_template/src/domain/entities/document.dart';
-import 'package:flutter_template/src/domain/failures/business_failure.dart';
-import 'package:flutter_template/src/domain/repositories/document_repository.dart';
+import 'package:docmark/src/core/base/result.dart';
+import 'package:docmark/src/core/base/unit.dart';
+import 'package:docmark/src/domain/entities/document.dart';
+import 'package:docmark/src/domain/failures/business_failure.dart';
+import 'package:docmark/src/domain/repositories/document_repository.dart';
 
 /// [DocumentRepository] that records watermark-config saves.
 ///
@@ -86,20 +86,26 @@ final class IdGenerator {
 }
 
 /// An image document with [pageCount] pages of 600x800 points.
+///
+/// [pageIndexes] builds a PDF page-subset fixture: `pageCount` stays the
+/// source total while `pageSizes` only carries the named indices.
 DocumentEntity testDocument({
   String id = 'doc-1',
   String name = 'scan.png',
   DocumentKind kind = DocumentKind.image,
   int pageCount = 1,
+  List<int>? pageIndexes,
   String? watermarkConfigJson,
 }) {
+  final indexes = pageIndexes ?? List<int>.generate(pageCount, (i) => i);
+
   return DocumentEntity(
     id: id,
     name: name,
     kind: kind,
     pageCount: pageCount,
     pageSizes: [
-      for (var index = 0; index < pageCount; index++)
+      for (final index in indexes)
         DocumentPage(index: index, widthPt: 600, heightPt: 800),
     ],
     watermarkConfigJson: watermarkConfigJson,

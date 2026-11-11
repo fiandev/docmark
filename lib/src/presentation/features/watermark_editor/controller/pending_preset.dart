@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/di/features/history_providers.dart';
 import '../../../../core/di/features/presets_providers.dart';
+import '../../../../domain/entities/document.dart';
 
-/// The one place the editor touches T5's preset handoff.
+/// The one place the editor touches the cross-feature hand-offs.
 ///
 /// Expected API in `presets_providers.dart`:
 ///
@@ -25,4 +27,14 @@ String? readPendingPresetId(Ref ref) => ref.read(pendingPresetIdProvider);
 /// session has loaded it, never from a provider build.
 void clearPendingPresetId(WidgetRef ref) {
   ref.read(pendingPresetIdProvider.notifier).clear();
+}
+
+/// The watermark configuration History hands over when the original
+/// document is gone. A preset id outranks it; the stored draft does not.
+WatermarkConfig? readPendingWatermarkConfig(Ref ref) =>
+    ref.read(pendingWatermarkConfigProvider);
+
+/// Consumes the History hand-off after the session has applied it.
+void clearPendingWatermarkConfig(WidgetRef ref) {
+  ref.read(pendingWatermarkConfigProvider.notifier).clear();
 }

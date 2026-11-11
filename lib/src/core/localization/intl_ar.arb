@@ -67,7 +67,7 @@
   "failureUnexpected": "Something went wrong.",
   "retry": "Try again",
   "signInAgain": "Sign in again",
-  "appTitle": "Flutter Template",
+  "appTitle": "DocMark",
   "somethingWentWrong": "Something went wrong.",
   "common_home": "Home",
   "common_presets": "Presets",
@@ -350,5 +350,18 @@
   "settings_allDataDeleted": "All app data deleted.",
   "settings_privacyLocal": "Every watermark is added on this device. Nothing is uploaded.",
   "settings_privacyEncrypted": "Documents, presets and previews stay encrypted at rest in DocMark's private storage.",
-  "settings_privacyExport": "Exported files leave DocMark's protection. Share them only with people you trust."
+  "settings_privacyExport": "Exported files leave DocMark's protection. Share them only with people you trust.",
+  "export_pageNumber": "Page {page}",
+  "export_qualityPercent": "{percent}%",
+  "settings_biometrics": "فتح القفل بالبصمة",
+  "settings_biometricsBody": "استخدم بصمة إصبعك أو وجهك بدلًا من رمز PIN.",
+  "settings_biometricsEnabled": "فتح القفل بالبصمة مُفعّل.",
+  "settings_biometricsOff": "فتح القفل بالبصمة مُعطّل.",
+  "editor_lockedHint": "الموضع والحجم مقفلان. أزل القفل للنقل أو تغيير الحجم أو التدوير أو القص.",
+  "settings_resetLock": "إعادة تعيين قفل التطبيق",
+  "settings_resetLockBody": "استخدم هذا إذا لم تعد قادرًا على فتح التطبيق. ستُزال شفرة PIN وتبقى مستنداتك مشفّرة.",
+  "settings_resetLockConfirm": "إعادة تعيين قفل التطبيق وإزالة شفرة PIN؟ سيتم الاحتفاظ بمستنداتك.",
+  "settings_resetLockAction": "إعادة تعيين",
+  "settings_resetLockDone": "تمت إعادة تعيين قفل التطبيق.",
+  "settings_resetLockFailed": "تعذّرت إعادة تعيين قفل التطبيق."
 }

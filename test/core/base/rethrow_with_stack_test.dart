@@ -1,4 +1,4 @@
-import 'package:flutter_template/src/core/base/rethrow_with_stack.dart';
+import 'package:docmark/src/core/base/rethrow_with_stack.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

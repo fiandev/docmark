@@ -68,10 +68,26 @@ final class DocumentEntity {
   final String id;
   final String name;
   final DocumentKind kind;
+
+  /// The source document's total page count. A subset import keeps this at
+  /// the source total; enumerate [pageSourceIndices] to walk what was
+  /// actually imported.
   final int pageCount;
 
   /// Per-page dimensions. A PDF may have pages of different sizes.
   final List<DocumentPage> pageSizes;
+
+  /// The source indices this document addresses, in stored order.
+  ///
+  /// A PDF page-subset import records only the selected source pages, so
+  /// these are not necessarily `0..pageCount-1`. Every page-facing API
+  /// (`readPage`, `RenderRequest.pageIndex`, export selections) speaks
+  /// these source indices.
+  List<int> get pageSourceIndices =>
+      List<int>.unmodifiable(pageSizes.map((page) => page.index));
+
+  /// The number of pages the user actually imported.
+  int get selectedPageCount => pageSizes.length;
 
   /// The saved watermark configuration, serialized by `WatermarkConfig`.
   /// Null until the user first edits the document.

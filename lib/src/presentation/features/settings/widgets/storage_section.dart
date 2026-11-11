@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/base/base.dart';
 import '../../../../core/di/features/history_providers.dart';
-import '../../../../core/di/features/security_providers.dart';
+import '../../../../core/di/features/home_providers.dart';
+import '../../../../core/di/features/presets_providers.dart';
+import '../../../../core/di/features/storage_providers.dart';
 import '../../../../core/extensions/localization.dart';
 import '../../../../core/gen/l10n/app_localizations.dart';
 import '../../../core/theme/theme.dart';
@@ -96,20 +98,28 @@ class StorageSection extends ConsumerWidget {
     );
     if (confirmed != true || !context.mounted) return;
 
-    // The history cascade removes its own assets; the vault sweep then
-    // catches anything a crashed run left behind.
-    final result = await ref.read(historyRepositoryProvider).clear();
+    // Every table, every vault blob, and the scratch directories, in one
+    // operation: a partial wipe would leave document names or watermark
+    // text behind while the UI claims the data is gone.
+    try {
+      await ref.read(appDataWipeProvider).wipeAll();
+    } catch (_) {
+      if (!context.mounted) return;
+      _showSnack(context, l10n.settings_failure);
+
+      return;
+    }
     if (!context.mounted) return;
 
-    switch (result) {
-      case Success():
-        await ref.read(secureFileVaultProvider).deleteAll();
-        if (!context.mounted) return;
-        ref.invalidate(storageUsageProvider);
-        _showSnack(context, l10n.settings_allDataDeleted);
-      case Error():
-        _showSnack(context, l10n.settings_failure);
-    }
+    // Cross-feature caches are invalidated through the DI seam so this
+    // widget stays free of feature-to-feature imports.
+    ref
+      ..invalidate(historyListProvider)
+      ..invalidate(presetListProvider)
+      ..invalidate(recentDocumentsProvider)
+      ..invalidate(recentProcessingProvider)
+      ..invalidate(storageUsageProvider);
+    _showSnack(context, l10n.settings_allDataDeleted);
   }
 }
 

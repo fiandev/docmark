@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:flutter_template/src/core/security/encryption_service.dart';
-import 'package:flutter_template/src/core/security/src/aes_gcm_encryption_service.dart';
-import 'package:flutter_template/src/core/security/src/failures.dart';
+import 'package:docmark/src/core/security/encryption_service.dart';
+import 'package:docmark/src/core/security/src/aes_gcm_encryption_service.dart';
+import 'package:docmark/src/core/security/src/failures.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

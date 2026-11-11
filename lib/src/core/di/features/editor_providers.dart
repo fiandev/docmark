@@ -35,6 +35,7 @@ final class EditorSession {
     required this.pageIndex,
     required this.controller,
     this.appliedPresetId,
+    this.appliedPendingConfig = false,
   });
 
   final String documentId;
@@ -53,6 +54,10 @@ final class EditorSession {
   /// The preset the presets screen handed over, if one was requested. The
   /// page clears the handoff after it has been consumed.
   final String? appliedPresetId;
+
+  /// Whether [config] came from History's pending snapshot. The page clears
+  /// that handoff in the same post-frame pass as the preset id.
+  final bool appliedPendingConfig;
 }
 
 /// Loads one document's stored watermark configuration into a controller.
@@ -65,6 +70,7 @@ final class EditorSession {
 Future<EditorSession> editorSession(Ref ref, String documentId) async {
   final repository = ref.watch(documentRepositoryProvider);
   final pendingPresetId = readPendingPresetId(ref);
+  final pendingConfig = readPendingWatermarkConfig(ref);
 
   final loaded = await repository.get(documentId);
   if (!ref.mounted) throw const BusinessFailure.cancelled();
@@ -76,15 +82,27 @@ Future<EditorSession> editorSession(Ref ref, String documentId) async {
   if (document == null) throw const BusinessFailure.notFound();
 
   var config = _storedConfig(document);
+  String? appliedPresetId;
+  var appliedPendingConfig = false;
 
+  // Precedence: an explicit preset id beats the History snapshot, which in
+  // turn beats the document's own draft.
   if (pendingPresetId != null) {
     final applied = await _applyPreset(
       ref,
       presetId: pendingPresetId,
       documentId: documentId,
     );
-    if (applied != null) config = applied;
+    if (applied != null) {
+      config = applied;
+      appliedPresetId = pendingPresetId;
+    }
     if (!ref.mounted) throw const BusinessFailure.cancelled();
+  }
+
+  if (appliedPresetId == null && pendingConfig != null) {
+    config = pendingConfig;
+    appliedPendingConfig = true;
   }
 
   final controller = EditorController(
@@ -100,7 +118,8 @@ Future<EditorSession> editorSession(Ref ref, String documentId) async {
     config: config,
     pageIndex: controller.pageIndex,
     controller: controller,
-    appliedPresetId: pendingPresetId,
+    appliedPresetId: appliedPresetId,
+    appliedPendingConfig: appliedPendingConfig,
   );
 }
 

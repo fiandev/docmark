@@ -9,6 +9,7 @@ import '../../../../core/base/result.dart';
 import '../../../../core/di/features/history_providers.dart';
 import '../../../../core/di/features/import_providers.dart';
 import '../../../../core/extensions/localization.dart';
+import '../../../../domain/entities/document.dart';
 import '../../../../domain/entities/history.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
@@ -175,7 +176,22 @@ class HistoryPage extends ConsumerWidget {
     }
 
     if (!context.mounted) return;
-    await _offerImport(context);
+    await _offerImport(context, ref, _configFromEntry(entry));
+  }
+
+  /// The configuration snapshot the entry kept, if it can be parsed.
+  ///
+  /// This is the only copy left once the original document is gone, so a
+  /// corrupt snapshot degrades to a plain import rather than blocking it.
+  WatermarkConfig? _configFromEntry(HistoryEntryEntity entry) {
+    final source = entry.watermarkConfigJson;
+    if (source == null || source.isEmpty) return null;
+
+    try {
+      return WatermarkConfig.fromJsonString(source);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<bool> _documentExists(WidgetRef ref, String documentId) async {
@@ -187,7 +203,11 @@ class HistoryPage extends ConsumerWidget {
     };
   }
 
-  Future<void> _offerImport(BuildContext context) async {
+  Future<void> _offerImport(
+    BuildContext context,
+    WidgetRef ref,
+    WatermarkConfig? config,
+  ) async {
     final shouldImport = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -215,6 +235,11 @@ class HistoryPage extends ConsumerWidget {
     );
     if (shouldImport != true || !context.mounted) return;
 
+    // Park the snapshot until the editor opens the replacement document;
+    // the editor consumes it with preset > snapshot > draft precedence.
+    if (config != null) {
+      ref.read(pendingWatermarkConfigProvider.notifier).set(config);
+    }
     unawaited(context.pushNamed(Routes.documentPicker.name));
   }
 }

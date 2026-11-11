@@ -74,6 +74,7 @@ class _ExportPreviewPageState extends ConsumerState<ExportPreviewPage> {
         vault: ref.read(secureFileVaultProvider),
         history: ref.read(historyRepositoryProvider),
         fileWriter: const DeviceExportFileWriter(),
+        onExported: _refreshHistory,
       );
       _loadingPreview = true;
       unawaited(_loadPreview());
@@ -240,6 +241,13 @@ class _ExportPreviewPageState extends ConsumerState<ExportPreviewPage> {
   void _invalidateBundle() {
     _bundle = null;
     _bundleKey = null;
+  }
+
+  /// A recorded export changes the History tab and Home's recent strip.
+  void _refreshHistory() {
+    if (!mounted) return;
+    ref.invalidate(historyListProvider);
+    ref.invalidate(recentDocumentsProvider);
   }
 
   Future<ExportBundle> _prepareBundle() async {

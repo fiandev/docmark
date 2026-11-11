@@ -33,6 +33,7 @@ class AppLockSection extends ConsumerWidget {
     return SettingsCard(
       children: [
         SwitchListTile(
+          key: const ValueKey<String>('settings-app-lock-switch'),
           value: state.isEnabled,
           onChanged: (enabled) =>
               unawaited(_toggle(context, ref, enabled: enabled)),
@@ -48,6 +49,18 @@ class AppLockSection extends ConsumerWidget {
           ),
         ),
         if (state.isEnabled) ...[
+          SwitchListTile(
+            key: const ValueKey<String>('settings-biometrics-switch'),
+            value: state.biometricsEnabled,
+            onChanged: (enabled) =>
+                unawaited(_toggleBiometrics(context, ref, enabled: enabled)),
+            secondary: Icon(
+              Icons.fingerprint,
+              color: context.color.text.muted,
+            ),
+            title: LabelText(l10n.settings_biometrics),
+            subtitle: BodySmallText.muted(l10n.settings_biometricsBody),
+          ),
           ListTile(
             leading: Icon(
               Icons.password_outlined,
@@ -61,6 +74,16 @@ class AppLockSection extends ConsumerWidget {
             onTap: () => unawaited(_changePin(context, ref)),
           ),
           _GracePeriodTile(policy: state.policy),
+          ListTile(
+            key: const ValueKey<String>('settings-reset-lock'),
+            leading: Icon(
+              Icons.restart_alt,
+              color: context.color.status.danger,
+            ),
+            title: LabelText(l10n.settings_resetLock),
+            subtitle: BodySmallText.muted(l10n.settings_resetLockBody),
+            onTap: () => unawaited(_resetLock(context, ref)),
+          ),
         ],
       ],
     );
@@ -104,6 +127,26 @@ class AppLockSection extends ConsumerWidget {
     _report(context, l10n, result, l10n.settings_appLockDisabled);
   }
 
+  Future<void> _toggleBiometrics(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool enabled,
+  }) async {
+    final l10n = context.locale;
+    final result = await ref
+        .read(appLockServiceProvider)
+        .updateSettings(biometricsEnabled: enabled);
+    if (!context.mounted) return;
+    _report(
+      context,
+      l10n,
+      result,
+      enabled
+          ? l10n.settings_biometricsEnabled
+          : l10n.settings_biometricsOff,
+    );
+  }
+
   Future<void> _changePin(BuildContext context, WidgetRef ref) async {
     final l10n = context.locale;
     final service = ref.read(appLockServiceProvider);
@@ -132,6 +175,42 @@ class AppLockSection extends ConsumerWidget {
     );
     if (!context.mounted) return;
     _report(context, l10n, result, l10n.settings_pinChanged);
+  }
+
+  /// Recovery path for a user who can no longer unlock: the confirmation is
+  /// mandatory, and the service is told it may delete the lock blob.
+  Future<void> _resetLock(BuildContext context, WidgetRef ref) async {
+    final l10n = context.locale;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.settings_resetLock),
+        content: BodySmallText(l10n.settings_resetLockConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.common_cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.settings_resetLockAction),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    final result = await ref
+        .read(appLockServiceProvider)
+        .resetLockData(confirmed: true);
+    if (!context.mounted) return;
+
+    switch (result) {
+      case Success():
+        _showSnack(context, l10n.settings_resetLockDone);
+      case Error():
+        _showSnack(context, l10n.settings_resetLockFailed);
+    }
   }
 }
 

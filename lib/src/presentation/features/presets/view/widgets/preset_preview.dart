@@ -2,8 +2,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
-import '../../../../../core/theme/theme.dart';
-import '../../../../../core/widgets/watermark/watermark_canvas.dart';
+import '../../../../core/theme/theme.dart';
+import '../../../../core/widgets/watermark/watermark_canvas.dart';
 import '../../../../../domain/entities/watermark_element.dart';
 
 /// A preset's layers drawn small.

@@ -1,6 +1,7 @@
 import 'dart:io';
 
-import 'package:flutter_template/src/core/storage/temp_cleanup.dart';
+import 'package:docmark/src/core/storage/scratch_paths.dart';
+import 'package:docmark/src/core/storage/temp_cleanup.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -63,6 +64,24 @@ void main() {
       );
 
       await expectLater(service.cleanupAbandoned(), completes);
+    });
+
+    test('sweeps the plaintext share directory', () async {
+      final share = Directory('${root.path}/$shareDirectoryName')
+        ..createSync();
+      final staged = File('${share.path}/scan_watermarked.png')
+        ..writeAsStringSync('plaintext export');
+      staged.setLastModifiedSync(
+        DateTime.now().subtract(const Duration(hours: 2)),
+      );
+
+      final service = TempFileCleanupServiceImpl(
+        directories: [() async => share],
+        minimumAge: const Duration(hours: 1),
+      );
+      await service.cleanupAbandoned();
+
+      expect(await staged.exists(), isFalse);
     });
 
     test('swallows a resolver failure', () async {

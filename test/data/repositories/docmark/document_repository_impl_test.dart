@@ -1,14 +1,16 @@
 import 'dart:typed_data';
 
-import 'package:flutter_template/src/core/base/result.dart';
-import 'package:flutter_template/src/core/base/unit.dart';
-import 'package:flutter_template/src/core/storage/db/app_database.dart';
-import 'package:flutter_template/src/core/storage/db/dao/preset_dao.dart';
-import 'package:flutter_template/src/domain/entities/document.dart';
-import 'package:flutter_template/src/domain/entities/normalized_rect.dart';
-import 'package:flutter_template/src/domain/entities/watermark_element.dart';
-import 'package:flutter_template/src/domain/failures/business_failure.dart';
-import 'package:flutter_template/src/domain/repositories/document_repository.dart';
+import 'package:docmark/src/core/base/result.dart';
+import 'package:docmark/src/core/base/unit.dart';
+import 'package:docmark/src/core/security/secure_file_vault.dart';
+import 'package:docmark/src/core/storage/db/app_database.dart';
+import 'package:docmark/src/core/storage/db/dao/preset_dao.dart';
+import 'package:docmark/src/data/repositories/document_repository_impl.dart';
+import 'package:docmark/src/domain/entities/document.dart';
+import 'package:docmark/src/domain/entities/normalized_rect.dart';
+import 'package:docmark/src/domain/entities/watermark_element.dart';
+import 'package:docmark/src/domain/failures/business_failure.dart';
+import 'package:docmark/src/domain/repositories/document_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'harness.dart';
@@ -72,7 +74,33 @@ void main() {
       expect(entity.kind, DocumentKind.pdf);
       expect(entity.pageCount, 3);
       expect(entity.pageSizes.map((page) => page.index), [0, 1, 2]);
+      expect(entity.pageSourceIndices, [0, 1, 2]);
+      expect(entity.selectedPageCount, 3);
       expect(entity.pageSizes.first.widthPt, 612);
+    });
+
+    test('records each mixed-size PDF page with its own dimensions', () async {
+      final repository = harness.documents();
+
+      final entity = dataOf(
+        await repository.importDocument(
+          ImportRequest(
+            source: ImportSource.filePicker,
+            fileName: 'mixed.pdf',
+            bytes: pdfBytes('mixed'),
+          ),
+        ),
+      );
+
+      expect(entity.pageSizes.map((page) => page.widthPt), [612, 400, 300]);
+      expect(entity.pageSizes.map((page) => page.heightPt), [792, 600, 500]);
+
+      // The same per-page sizes survive a round trip through storage.
+      final fetched = dataOf(await repository.get(entity.id))!;
+      expect(fetched.pageSizes, entity.pageSizes);
+
+      final listed = dataOf(await repository.list()).single;
+      expect(listed.pageSizes, entity.pageSizes);
     });
 
     test('honours the selected PDF pages', () async {
@@ -89,8 +117,19 @@ void main() {
         ),
       );
 
+      // pageCount stays the source total; only pageSizes is the subset.
       expect(entity.pageCount, 3);
       expect(entity.pageSizes.map((page) => page.index), [1, 2]);
+      expect(entity.pageSourceIndices, [1, 2]);
+      expect(entity.selectedPageCount, 2);
+      // A subset keeps the selected pages' own sizes too.
+      expect(entity.pageSizes.map((page) => page.widthPt), [400, 300]);
+
+      expect(dataOf(await repository.readPage(entity.id, 1)), isNotEmpty);
+      expect(
+        await repository.readPage(entity.id, 0),
+        isA<Error<Uint8List, BusinessFailure>>(),
+      );
     });
 
     test('refuses an unsupported format before writing', () async {
@@ -237,6 +276,41 @@ void main() {
       );
     });
 
+    test('delete commits rows before the blob delete can fail', () async {
+      final imported = dataOf(
+        await harness.documents().importDocument(
+          ImportRequest(
+            source: ImportSource.gallery,
+            fileName: 'one.png',
+            bytes: pngBytes('one'),
+          ),
+        ),
+      );
+      final repository = DocumentRepositoryImpl(
+        crashReporter: harness.crashReporter,
+        database: harness.database,
+        vault: _VaultWithFailingDelete(harness.vault),
+        normalizer: harness.normalizer,
+        images: harness.images,
+      );
+
+      final result = await repository.delete(imported.id);
+
+      // The opaque exception surfaces as a failure...
+      expect(result, isA<Error<Unit, BusinessFailure>>());
+      // ...but the rows are already committed: no dangling metadata.
+      expect(
+        await harness.database.select(harness.database.documents).get(),
+        isEmpty,
+      );
+      expect(
+        await harness.database.select(harness.database.documentPages).get(),
+        isEmpty,
+      );
+      // The blob survived a failed delete, which is the recoverable state.
+      expect(await harness.files(), hasLength(1));
+    });
+
     test('delete keeps an asset a preset still references', () async {
       final repository = harness.documents();
       final imported = dataOf(
@@ -283,4 +357,35 @@ ImageWatermark _imageElement(String assetId) {
     rect: const NormalizedRect.fromLTWH(0.1, 0.1, 0.2, 0.2),
     assetId: assetId,
   );
+}
+
+/// Delegates every read and write, but refuses to delete: the ordering test
+/// needs the row transaction to succeed while the blob step fails.
+final class _VaultWithFailingDelete implements SecureFileVault {
+  _VaultWithFailingDelete(this._inner);
+
+  final SecureFileVault _inner;
+
+  @override
+  Future<AssetRef> put({
+    required Uint8List bytes,
+    required String extension,
+    String? assetId,
+  }) => _inner.put(bytes: bytes, extension: extension, assetId: assetId);
+
+  @override
+  Future<Uint8List> read(AssetRef ref) => _inner.read(ref);
+
+  @override
+  Future<bool> exists(AssetRef ref) => _inner.exists(ref);
+
+  @override
+  Future<void> delete(AssetRef ref) async => throw _VaultLocked();
+
+  @override
+  Future<void> deleteAll() => _inner.deleteAll();
+}
+
+final class _VaultLocked implements Exception {
+  const _VaultLocked();
 }

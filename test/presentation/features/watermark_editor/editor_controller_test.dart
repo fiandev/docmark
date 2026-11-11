@@ -2,11 +2,11 @@ import 'dart:ui' show Size;
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_template/src/domain/entities/document.dart';
-import 'package:flutter_template/src/domain/entities/normalized_rect.dart';
-import 'package:flutter_template/src/domain/entities/watermark_element.dart';
-import 'package:flutter_template/src/domain/failures/business_failure.dart';
-import 'package:flutter_template/src/presentation/features/watermark_editor/controller/editor_controller.dart';
+import 'package:docmark/src/domain/entities/document.dart';
+import 'package:docmark/src/domain/entities/normalized_rect.dart';
+import 'package:docmark/src/domain/entities/watermark_element.dart';
+import 'package:docmark/src/domain/failures/business_failure.dart';
+import 'package:docmark/src/presentation/features/watermark_editor/controller/editor_controller.dart';
 
 import 'support/editor_fakes.dart';
 
@@ -93,9 +93,9 @@ void main() {
   });
 
   group('lock and visibility', () {
-    test('a locked element refuses transforms but stays selectable', () {
+    test('a locked element refuses only geometry changes', () {
       final controller = build();
-      final element = controller.addText()!;
+      final element = controller.addText(content: 'Draft')!;
       final rect = element.rect;
       final rotation = element.rotationDeg;
 
@@ -104,17 +104,49 @@ void main() {
       controller.moveBy(element.id, const NormalizedOffset(0.1, 0.1));
       controller.setRotation(element.id, 90);
       controller.setOpacity(element.id, 0.2);
+      controller.updateText(
+        element.id,
+        content: 'Approved',
+        colorArgb: 0xFF00FF00,
+        rotationDeg: 45,
+      );
 
-      final locked = controller.config.elements.single;
+      final locked = controller.config.elements.single as TextWatermark;
       expect(locked.locked, isTrue);
       expect(locked.rect, rect);
       expect(locked.rotationDeg, rotation);
-      expect(locked.opacity, 1);
+      // Content, colour and opacity are appearance, not geometry.
+      expect(locked.content, 'Approved');
+      expect(locked.colorArgb, 0xFF00FF00);
+      expect(locked.opacity, 0.2);
       expect(controller.selectedId, element.id);
 
       controller.setLocked(element.id, false);
       controller.moveBy(element.id, const NormalizedOffset(0.1, 0.1));
       expect(controller.config.elements.single.rect, isNot(rect));
+    });
+
+    test('a locked image keeps crop and rotation but allows appearance', () {
+      final controller = build();
+      final element = controller.addImage('asset-1')!;
+
+      controller.setLocked(element.id, true);
+      controller.applyCrop(
+        element.id,
+        const CropRect.fromLTWH(0.1, 0.2, 0.5, 0.4),
+      );
+      controller.updateImage(
+        element.id,
+        rotationDeg: 30,
+        opacity: 0.4,
+        lockAspect: false,
+      );
+
+      final image = controller.config.elements.single as ImageWatermark;
+      expect(image.crop, isNull);
+      expect(image.rotationDeg, element.rotationDeg);
+      expect(image.opacity, 0.4);
+      expect(image.lockAspect, isFalse);
     });
 
     test('visibility only flips the flag', () {
@@ -201,6 +233,56 @@ void main() {
         controller.config.elementsForPage(1).map((element) => element.id),
         <String>[b.id, c.id],
       );
+    });
+
+    test('a PDF subset enumerates and assigns only source pages', () {
+      final controller = build(
+        document: testDocument(
+          pageCount: 3,
+          pageIndexes: const <int>[1, 2],
+        ),
+      );
+
+      // pageCount is the imported subset, not the source total.
+      expect(controller.pageCount, 2);
+      expect(controller.pageSourceIndices, <int>[1, 2]);
+      expect(controller.pageIndex, 1);
+
+      controller.setPage(2);
+      expect(controller.pageIndex, 2);
+
+      final a = controller.addText(content: 'A')!;
+      controller.setElementPages(a.id, <int>{1});
+
+      expect(controller.config.pageAssignments.keys.toSet(), <int>{1, 2});
+      expect(
+        controller.config.elementsForPage(1).map((element) => element.id),
+        contains(a.id),
+      );
+      expect(
+        controller.config.elementsForPage(2).map((element) => element.id),
+        isNot(contains(a.id)),
+      );
+
+      controller.setElementPages(a.id, <int>{1, 2});
+      expect(controller.paintsEveryPage(a.id), isTrue);
+    });
+
+    test('an out-of-subset page request lands on the nearest source page', () {
+      final controller = build(
+        document: testDocument(
+          pageCount: 5,
+          pageIndexes: const <int>[2, 4],
+        ),
+      );
+
+      expect(controller.pageIndex, 2);
+
+      controller.setPage(3);
+      expect(controller.pageIndex, 4);
+
+      controller.setPage(0);
+      expect(controller.pageIndex, 2);
     });
   });
 

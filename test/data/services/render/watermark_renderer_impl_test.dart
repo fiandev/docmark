@@ -5,14 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 
-import 'package:flutter_template/src/data/services/render/pdf_composer.dart';
-import 'package:flutter_template/src/data/services/render/pdf_page_rasterizer.dart';
-import 'package:flutter_template/src/data/services/render/watermark_renderer_impl.dart';
-import 'package:flutter_template/src/domain/entities/document.dart';
-import 'package:flutter_template/src/domain/entities/image_format.dart';
-import 'package:flutter_template/src/domain/entities/normalized_rect.dart';
-import 'package:flutter_template/src/domain/entities/watermark_element.dart';
-import 'package:flutter_template/src/domain/services/render_contract.dart';
+import 'package:docmark/src/data/services/render/pdf_composer.dart';
+import 'package:docmark/src/data/services/render/pdf_page_rasterizer.dart';
+import 'package:docmark/src/data/services/render/watermark_renderer_impl.dart';
+import 'package:docmark/src/domain/entities/document.dart';
+import 'package:docmark/src/domain/entities/image_format.dart';
+import 'package:docmark/src/domain/entities/normalized_rect.dart';
+import 'package:docmark/src/domain/entities/watermark_element.dart';
+import 'package:docmark/src/domain/services/render_contract.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -153,6 +153,37 @@ void main() {
         expect(result.bytes, composer.output);
       },
     );
+
+    test('an empty selection rebuilds the imported subset only', () async {
+      final loader = _RecordingPageLoader();
+      final rasterizer = _FakeRasterizer(<int, Size>{
+        1: const Size(200, 500),
+        2: const Size(250, 350),
+      });
+      final composer = _RecordingComposer();
+      final renderer = _renderer(
+        pageLoader: loader.call,
+        rasterizer: rasterizer,
+        composer: composer,
+      );
+      final full = _pdfDocument(<int, Size>{
+        0: const Size(300, 400),
+        1: const Size(200, 500),
+        2: const Size(250, 350),
+      });
+      final subset = full.copyWith(
+        pageSizes: full.pageSizes
+            .where((page) => page.index != 0)
+            .toList(),
+      );
+
+      await renderer.renderPdfPdf(
+        ExportRequest(document: subset, config: WatermarkConfig.empty),
+      );
+
+      expect(loader.calls, <int>[1, 2]);
+      expect(composer.pages, hasLength(2));
+    });
 
     test('a page loader read never mutates the source bytes', () async {
       final original = Uint8List.fromList(<int>[

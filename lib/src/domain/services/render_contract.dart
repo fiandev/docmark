@@ -20,6 +20,9 @@ final class RenderRequest {
   });
 
   final Uint8List sourceBytes;
+
+  /// The page's SOURCE index in [sourceBytes], not its position in the
+  /// imported subset.
   final int pageIndex;
 
   /// The page's size in PDF points (72 dpi).
@@ -83,16 +86,20 @@ final class ExportRequest {
   final DocumentEntity document;
   final WatermarkConfig config;
 
-  /// Selected pages. Empty means every page.
+  /// Selected pages, as SOURCE indices. Empty means every imported page.
   final List<int> pageIndexes;
 
   final ExportOptions options;
 
   /// The pages to export, resolving the empty-list "all pages" shorthand.
+  ///
+  /// Defaults to the imported subset ([DocumentEntity.pageSourceIndices]),
+  /// never the source document's full page range: unselected pages have no
+  /// `document_pages` row and must not leak into an export.
   List<int> get resolvedPages {
     if (pageIndexes.isNotEmpty) return pageIndexes;
 
-    return List<int>.generate(document.pageCount, (index) => index);
+    return document.pageSourceIndices;
   }
 
   /// An empty request for the router while the export flow is a stub.

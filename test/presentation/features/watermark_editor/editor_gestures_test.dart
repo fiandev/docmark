@@ -2,9 +2,9 @@ import 'dart:ui' show Offset, Rect, Size;
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_template/src/domain/entities/normalized_rect.dart';
-import 'package:flutter_template/src/domain/services/watermark_geometry.dart';
-import 'package:flutter_template/src/presentation/features/watermark_editor/controller/editor_gestures.dart';
+import 'package:docmark/src/domain/entities/normalized_rect.dart';
+import 'package:docmark/src/domain/services/watermark_geometry.dart';
+import 'package:docmark/src/presentation/features/watermark_editor/controller/editor_gestures.dart';
 
 void main() {
   const pageSize = Size(1000, 1000);

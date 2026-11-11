@@ -1,4 +1,4 @@
-import 'package:flutter_template/src/core/base/crash_reporter.dart';
+import 'package:docmark/src/core/base/crash_reporter.dart';
 
 /// Records every [report] call for assertions.
 class FakeCrashReporter implements CrashReporter {

@@ -7,6 +7,11 @@ import '../lock_controller.dart';
 /// The secret half of App Lock: the salt, the PIN verifier, the policy, and
 /// the biometrics flag.
 ///
+/// The failed-attempt counter and cooldown deadline live here too. They are
+/// not secret, but they must survive a restart: an attacker who could reset
+/// the backoff by killing the process would turn a paced guessing attack
+/// into an unlimited one.
+///
 /// This never reaches storage as-is. The controller serializes it with
 /// [toBytes] and seals the result with AES-GCM under the key-encryption key;
 /// only the [LockBlob] envelope is written to secure storage. [toString] is
@@ -18,6 +23,8 @@ final class LockSecret {
     required this.iterations,
     required this.policy,
     required this.biometricsEnabled,
+    this.failedAttempts = 0,
+    this.lockedUntil,
   });
 
   /// Rebuilds a secret from the decrypted JSON payload.
@@ -42,6 +49,8 @@ final class LockSecret {
         pinLength: policy['pinLength'] as int,
       ),
       biometricsEnabled: json['biometricsEnabled'] as bool? ?? false,
+      failedAttempts: json['failedAttempts'] as int? ?? 0,
+      lockedUntil: _deadlineFromJson(json['lockedUntil']),
     );
   }
 
@@ -63,9 +72,18 @@ final class LockSecret {
   final LockPolicy policy;
   final bool biometricsEnabled;
 
+  /// Consecutive misses recorded so far, including across restarts.
+  final int failedAttempts;
+
+  /// When the current cooldown expires; null when no cooldown is active.
+  final DateTime? lockedUntil;
+
   LockSecret copyWith({
     LockPolicy? policy,
     bool? biometricsEnabled,
+    int? failedAttempts,
+    DateTime? lockedUntil,
+    bool clearLockedUntil = false,
   }) {
     return LockSecret(
       salt: salt,
@@ -73,6 +91,10 @@ final class LockSecret {
       iterations: iterations,
       policy: policy ?? this.policy,
       biometricsEnabled: biometricsEnabled ?? this.biometricsEnabled,
+      failedAttempts: failedAttempts ?? this.failedAttempts,
+      lockedUntil: clearLockedUntil
+          ? null
+          : lockedUntil ?? this.lockedUntil,
     );
   }
 
@@ -90,10 +112,21 @@ final class LockSecret {
       'pinLength': policy.pinLength,
     },
     'biometricsEnabled': biometricsEnabled,
+    'failedAttempts': failedAttempts,
+    'lockedUntil': lockedUntil?.toUtc().millisecondsSinceEpoch,
   };
 
   @override
   String toString() => 'LockSecret(redacted)';
+}
+
+/// Reads the epoch-millisecond deadline the current format writes. Older
+/// blobs have no field, and a non-numeric value is treated as "no cooldown"
+/// rather than corrupting the whole blob.
+DateTime? _deadlineFromJson(Object? value) {
+  if (value is! int) return null;
+
+  return DateTime.fromMillisecondsSinceEpoch(value, isUtc: true);
 }
 
 /// The only bytes App Lock writes to storage: an AES-GCM envelope.

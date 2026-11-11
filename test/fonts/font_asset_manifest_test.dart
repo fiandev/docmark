@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter_template/src/domain/services/font_registry.dart';
+import 'package:docmark/src/domain/services/font_registry.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// The committed manifest that pairs every bundled font path with its licence,

@@ -2,9 +2,9 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_template/src/domain/entities/normalized_rect.dart';
-import 'package:flutter_template/src/domain/entities/watermark_element.dart';
-import 'package:flutter_template/src/presentation/core/widgets/watermark/watermark_canvas.dart';
+import 'package:docmark/src/domain/entities/normalized_rect.dart';
+import 'package:docmark/src/domain/entities/watermark_element.dart';
+import 'package:docmark/src/presentation/core/widgets/watermark/watermark_canvas.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

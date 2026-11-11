@@ -3,17 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:flutter_template/src/core/di/features/history_providers.dart';
-import 'package:flutter_template/src/core/di/features/import_providers.dart';
-import 'package:flutter_template/src/core/gen/l10n/app_localizations.dart';
-import 'package:flutter_template/src/domain/entities/document.dart';
-import 'package:flutter_template/src/domain/entities/history.dart';
-import 'package:flutter_template/src/domain/repositories/document_repository.dart';
-import 'package:flutter_template/src/domain/repositories/history_repository.dart';
-import 'package:flutter_template/src/presentation/core/router/routes.dart';
-import 'package:flutter_template/src/presentation/core/theme/theme.dart';
-import 'package:flutter_template/src/presentation/features/history/controller/history_presentation.dart';
-import 'package:flutter_template/src/presentation/features/history/view/history_page.dart';
+import 'package:docmark/src/core/di/features/history_providers.dart';
+import 'package:docmark/src/core/di/features/import_providers.dart';
+import 'package:docmark/src/core/gen/l10n/app_localizations.dart';
+import 'package:docmark/src/domain/entities/document.dart';
+import 'package:docmark/src/domain/entities/history.dart';
+import 'package:docmark/src/domain/entities/normalized_rect.dart';
+import 'package:docmark/src/domain/entities/watermark_element.dart';
+import 'package:docmark/src/domain/repositories/document_repository.dart';
+import 'package:docmark/src/domain/repositories/history_repository.dart';
+import 'package:docmark/src/presentation/core/router/routes.dart';
+import 'package:docmark/src/presentation/core/theme/theme.dart';
+import 'package:docmark/src/presentation/features/history/controller/history_presentation.dart';
+import 'package:docmark/src/presentation/features/history/view/history_page.dart';
 
 import '../../../data/repositories/docmark/harness.dart';
 import 'support/fake_document_repository.dart';
@@ -85,13 +87,18 @@ void main() {
       tester,
     ) async {
       final router = _router();
+      final history = FakeHistoryRepository(
+        entries: [_entry(documentId: 'gone', configRef: _configJson())],
+      );
+      final documents = FakeDocumentRepository();
+      final container = _container(history: history, documents: documents);
+      addTearDown(container.dispose);
       await tester.pumpWidget(
         _routerApp(
-          history: FakeHistoryRepository(
-            entries: [_entry(documentId: 'gone')],
-          ),
-          documents: FakeDocumentRepository(),
+          history: history,
+          documents: documents,
           router: router,
+          container: container,
         ),
       );
       await tester.pumpAndSettle();
@@ -110,6 +117,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('picker'), findsOneWidget);
+      // The snapshot is parked for the editor that opens after the import.
+      final pending = container.read(pendingWatermarkConfigProvider);
+      expect(pending, isNotNull);
+      expect(
+        (pending!.elements.single as TextWatermark).content,
+        'Archived',
+      );
     });
 
     test(
@@ -198,18 +212,36 @@ Widget _routerApp({
   required HistoryRepository history,
   required DocumentRepository documents,
   required GoRouter router,
+  ProviderContainer? container,
 }) {
+  final app = MaterialApp.router(
+    theme: _testTheme(),
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    routerConfig: router,
+  );
+  if (container != null) {
+    return UncontrolledProviderScope(container: container, child: app);
+  }
+
   return ProviderScope(
     overrides: [
       historyRepositoryProvider.overrideWith((ref) => history),
       documentRepositoryProvider.overrideWith((ref) => documents),
     ],
-    child: MaterialApp.router(
-      theme: _testTheme(),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      routerConfig: router,
-    ),
+    child: app,
+  );
+}
+
+ProviderContainer _container({
+  required HistoryRepository history,
+  required DocumentRepository documents,
+}) {
+  return ProviderContainer(
+    overrides: [
+      historyRepositoryProvider.overrideWith((ref) => history),
+      documentRepositoryProvider.overrideWith((ref) => documents),
+    ],
   );
 }
 
@@ -260,6 +292,7 @@ HistoryEntryEntity _entry({
   String name = 'alpha.pdf',
   HistoryStatus status = HistoryStatus.completed,
   String? documentId,
+  String? configRef,
 }) {
   return HistoryEntryEntity(
     id: id,
@@ -267,7 +300,20 @@ HistoryEntryEntity _entry({
     createdAt: DateTime.utc(2026, 6, 1),
     status: status,
     documentId: documentId,
+    watermarkConfigJson: configRef,
   );
+}
+
+String _configJson() {
+  return const WatermarkConfig(
+    elements: <WatermarkElement>[
+      TextWatermark(
+        id: 'text-1',
+        rect: NormalizedRect.fromLTWH(0.1, 0.1, 0.4, 0.2),
+        content: 'Archived',
+      ),
+    ],
+  ).toJsonString();
 }
 
 DocumentEntity _document(String id) {

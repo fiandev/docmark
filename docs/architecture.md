@@ -1,121 +1,122 @@
-# Flutter Template Architecture
+# DocMark Architecture
 
-This document outlines the architecture of the Flutter Template project, explaining the file structure, component responsibilities, and how different layers interact with each other.
+DocMark is a local-first Flutter app. It has one job: import a document,
+apply a watermark, and export a new copy without sending the document
+anywhere. The architecture exists to keep that promise auditable — the
+encrypted vault and the database are behind interfaces, and the UI can only
+reach them through the domain layer.
 
-## Project Structure
+## Layers
 
 ```
-lib/
-├── src/
-│   ├── core/                 # Core functionality and utilities
-│   │   ├── base/            # Base classes and interfaces
-│   │   ├── di/              # Dependency injection setup
-│   │   ├── extensions/      # Extension methods
-│   │   └── logger/          # Logging configuration
-│   │
-│   ├── data/                # Data layer
-│   │   ├── models/          # Data models
-│   │   ├── repositories/    # Repository implementations
-│   │   └── services/        # API and local storage services
-│   │
-│   ├── domain/              # Domain layer
-│   │   ├── entities/        # Business entities
-│   │   ├── repositories/    # Repository interfaces
-│   │   └── use_cases/       # Business logic use cases
-│   │
-│   └── presentation/        # Presentation layer
-│       ├── core/            # Core presentation components
-│       └── features/        # Feature-specific UI components
-│
-└── main.dart                # Application entry point
+lib/src/
+├── core/           # bootstrap, DI, storage, security, logging
+├── domain/         # entities, repository interfaces, services
+├── data/           # repository implementations, mappers, device services
+└── presentation/   # features, router, theme, shared widgets
 ```
 
-## Layer Responsibilities
+Dependencies point inward: `presentation → domain ← data`, with `core`
+providing wiring that both sides read.
 
-### Core Layer
-The core layer contains fundamental components and utilities used throughout the application:
-- **Base**: Contains base classes and interfaces that define common behavior
-- **DI**: Handles dependency injection setup using Riverpod
-- **Extensions**: Contains utility extension methods
-- **Logger**: Centralized logging configuration
+### Core
 
-### Data Layer
-The data layer is responsible for data operations and external communication:
-- **Models**: Data transfer objects (DTOs) and model classes
-- **Repositories**: Implementation of repository interfaces
-- **Services**: API clients, local storage, and other external services
+- **`core/bootstrap.dart`**: builds the one `ProviderContainer`, installs the
+  global error handlers, starts the App Lock lifecycle observer, and kicks
+  off the abandoned-temp-file sweep.
+- **`core/di/`**: Riverpod providers. `parts/` holds the small shared
+  providers (locale, cache, crash reporter); `features/` holds the per-feature
+  contracts (`storage_providers.dart`, `security_providers.dart`,
+  `history_providers.dart`, and so on). Features cross boundaries only
+  through these files.
+- **`core/storage/`**: the SQLCipher `AppDatabase` and its DAOs, the
+  envelope-encrypted `SecureFileVault`, the watermark asset store, temp-file
+  cleanup, and the `AppDataWipe` operation behind "delete all data".
+- **`core/security/`**: AES-256-GCM envelope encryption, the KEK manager,
+  secure key-value storage, and App Lock (`lock/`).
+- **`core/logger/`**: a `kDebugMode`-gated log facade and a payload-free
+  Riverpod observer.
 
-### Domain Layer
-The domain layer contains business logic and rules:
-- **Entities**: Core business objects
-- **Repositories**: Repository interfaces defining data operations
-- **Use Cases**: Business logic implementation
+### Domain
 
-### Presentation Layer
-The presentation layer handles UI and user interaction:
-- **Core**: Reusable UI components and utilities
-- **Features**: Feature-specific screens, widgets, and view models
+Pure Dart, no Flutter imports.
 
-## State Management
+- `entities/`: `DocumentEntity`, `PresetEntity`, `HistoryEntryEntity`,
+  `WatermarkElement`, geometry, and image formats.
+- `repositories/`: `DocumentRepository`, `PresetRepository`,
+  `HistoryRepository`, `LocaleRepository`. These are the frozen seams the
+  presentation layer depends on.
+- `services/`: `MediaNormalizerService`, `FormatProbe`, `RenderContract`, the
+  font registry, and watermark geometry.
+- `failures/`: the sealed `BusinessFailure` vocabulary the UI localizes.
 
-The project uses **Riverpod** for state management, which provides:
-- Dependency injection
-- State management
-- Code generation support
-- Type-safe providers
+### Data
 
-State is managed through:
-- **Providers**: For dependency injection and state management
-- **Notifiers**: For complex state management
-- **StateNotifiers**: For immutable state management
+- `repositories/*_impl.dart`: implement the domain interfaces over the
+  database and the vault. `core/base/repository.dart` is the only place a
+  `try`/`catch` becomes a typed `Result`; recoverable exceptions map to
+  `BusinessFailure`, and Dart `Error`s are reported as bugs.
+- `mappers/docmark_mappers.dart`: row ↔ entity conversion and JSON codecs.
+- `services/render/`: PDF composition, rasterization, and watermark drawing.
+- `services/media/`: format probing, image normalization, and platform pickers.
 
-## Service Integration
+Delete order is a rule in this layer: database rows are committed first,
+then blobs are erased. An orphan blob is recoverable garbage; a row whose
+blob is gone is unrecoverable metadata.
 
-Services are integrated through:
-1. **Dependency Injection**: Using Riverpod for service registration
-2. **Repository Pattern**: Abstracting data sources
-3. **Use Cases**: Implementing business logic
+### Presentation
 
-## Layer Communication
+- `presentation/core/`: router and gate, theme tokens and extensions, shared
+  widgets, failure mapping, and the application-state providers.
+- `presentation/features/`: one directory per feature —
+  `home`, `document_import`, `watermark_editor`, `presets`, `history`,
+  `export`, `app_lock`, `settings`, `splash`, `onboarding`.
 
-The layers communicate following clean architecture principles:
-1. **Presentation → Domain**: Uses use cases
-2. **Domain → Data**: Uses repository interfaces
-3. **Data → External**: Uses services
+A feature owns its controllers and widgets. It may import `presentation/core`
+and `core/di`; it must not import another feature's files.
+
+## State and DI
+
+Riverpod 3 with code generation. Providers are `keepAlive` where an object is
+expensive (database, vault, repositories) and auto-dispose for screen-scoped
+reads. Generated files (`*.g.dart`, `*.mapper.dart`) are not committed; run
+`dart run build_runner build --delete-conflicting-outputs`.
+
+See [dependency_injection.md](dependency_injection.md) for the provider map.
+
+## Storage model
+
+- `Documents`, `DocumentPages`, `DocumentAssets`: metadata, page geometry,
+  and the pointer to the encrypted source blob.
+- `Presets`, `PresetAssets`: saved watermark configurations and their
+  reference-counted image assets.
+- `WatermarkAssets`: the vault registry for watermark images.
+- `HistoryEntries`: exported runs with serialized asset references.
+- `AssetLinks`: which owner (document or history entry) points at which
+  asset, used for reference-counted deletion.
+- `AppMeta`: internal bookkeeping.
+
+The database has no foreign keys; cascades are explicit DAO transactions, and
+their commit is the point of no return: vault files are erased only after the
+rows that reference them are gone. SQLCipher provides at-rest encryption and
+the vault uses per-asset envelope encryption, so compromising one key does not
+expose the rest.
+
+## Security
+
+The threat model, envelope format, App Lock behaviour, and known limitations
+are documented in [security.md](security.md).
 
 ## Routing
 
-The project uses **go_router** for navigation, which provides:
-- Declarative routing
-- Deep linking support
-- Nested navigation
-- Route guards
+`routerStateProvider` folds startup, onboarding, and App Lock status into a
+single destination, and `RedirectGate.redirect` is the whole policy. Pages
+never navigate on a lock or onboarding change; they invalidate a status
+provider and the gate follows. See [router.md](router.md).
 
-Gating is a single pure derivation: `routerStateProvider` folds startup, onboarding, and session status into one destination, and `RedirectGate.redirect` is the entire policy. Pages never navigate on auth changes; they invalidate a status provider and the gate follows. See `docs/router.md` for the gate model and the route-adding recipe.
+## Testing
 
-## Key Dependencies
-
-- **State Management**: `flutter_riverpod`
-- **Navigation**: `go_router`
-- **Networking**: `dio`, `retrofit`
-- **Local Storage**: `shared_preferences`
-- **Code Generation**: `build_runner`, `riverpod_generator`
-- **Serialization**: `dart_mappable`
-- **Logging**: `logger`; network requests via `pretty_dio_logger` (debug-gated default), with the redacting `DebugLoggerInterceptor` as the strict alternative — swap the `logger` argument in `externals.dart`, see `docs/network.md`
-
-## Code Generation
-
-The project uses several code generation tools:
-- `build_runner`: For running code generators
-- `riverpod_generator`: For Riverpod code generation
-- `retrofit_generator`: For API client generation
-- `dart_mappable_builder`: For serialization code generation
-
-## Best Practices
-
-1. **Clean Architecture**: Strict separation of concerns
-2. **Dependency Injection**: Using Riverpod for DI
-3. **Repository Pattern**: Abstracting data sources
-4. **Use Cases**: Implementing business logic
-5. **Code Generation**: Reducing boilerplate
-6. **Type Safety**: Leveraging Dart's type system
+`test/` mirrors `lib/src`. Repository tests use an in-memory Drift database
+and a real encrypted vault rooted in a temp directory. Widget tests override
+the DI seams they touch (repositories, vault, wipe, App Lock service) rather
+than reaching into platform channels. `test/support/` holds the shared fakes.

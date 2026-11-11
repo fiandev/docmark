@@ -2,20 +2,20 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_template/src/core/base/result.dart';
-import 'package:flutter_template/src/core/base/unit.dart';
-import 'package:flutter_template/src/core/security/secure_file_vault.dart';
-import 'package:flutter_template/src/domain/entities/document.dart';
-import 'package:flutter_template/src/domain/entities/history.dart';
-import 'package:flutter_template/src/domain/entities/image_format.dart';
-import 'package:flutter_template/src/domain/entities/normalized_rect.dart';
-import 'package:flutter_template/src/domain/entities/watermark_element.dart';
-import 'package:flutter_template/src/domain/failures/business_failure.dart';
-import 'package:flutter_template/src/domain/repositories/document_repository.dart';
-import 'package:flutter_template/src/domain/repositories/history_repository.dart';
-import 'package:flutter_template/src/domain/services/render_contract.dart';
-import 'package:flutter_template/src/presentation/features/export/controller/export_controller.dart';
-import 'package:flutter_template/src/presentation/features/export/controller/export_file_writer.dart';
+import 'package:docmark/src/core/base/result.dart';
+import 'package:docmark/src/core/base/unit.dart';
+import 'package:docmark/src/core/security/secure_file_vault.dart';
+import 'package:docmark/src/domain/entities/document.dart';
+import 'package:docmark/src/domain/entities/history.dart';
+import 'package:docmark/src/domain/entities/image_format.dart';
+import 'package:docmark/src/domain/entities/normalized_rect.dart';
+import 'package:docmark/src/domain/entities/watermark_element.dart';
+import 'package:docmark/src/domain/failures/business_failure.dart';
+import 'package:docmark/src/domain/repositories/document_repository.dart';
+import 'package:docmark/src/domain/repositories/history_repository.dart';
+import 'package:docmark/src/domain/services/render_contract.dart';
+import 'package:docmark/src/presentation/features/export/controller/export_controller.dart';
+import 'package:docmark/src/presentation/features/export/controller/export_file_writer.dart';
 
 import '../../../support/fake_secure_file_vault.dart';
 import '../../../support/fake_watermark_renderer.dart';
@@ -44,6 +44,12 @@ void main() {
         jpegQuality: 0.9,
         pages: const <int>{0},
       );
+
+      // Rendering alone writes nothing and records nothing.
+      expect(bundle.vaultRef, isNull);
+      expect(history.recorded, isEmpty);
+
+      await controller.save(bundle);
 
       expect(documents.reads, <int>[0]);
       expect(renderer.imageCalls, hasLength(1));
@@ -80,6 +86,8 @@ void main() {
         pages: const <int>{0, 2},
       );
 
+      await controller.save(bundle);
+
       expect(documents.reads, <int>[0, 2]);
       expect(renderer.imageCalls, hasLength(2));
       expect(renderer.imageCalls[0].pixelRatio, closeTo(150 / 72, 0.001));
@@ -87,7 +95,40 @@ void main() {
         'report_watermarked_p1.png',
         'report_watermarked_p3.png',
       ]);
-      expect(history.recorded, hasLength(1));
+      // One history row per exported file, each with its own preview.
+      expect(history.recorded, hasLength(2));
+      expect(
+        history.recorded.map((entry) => entry.processedRef).toSet(),
+        hasLength(2),
+      );
+      expect(bundle.vaultRefs.whereType<AssetRef>(), hasLength(2));
+    });
+
+    test('a PDF page subset exports only the imported source pages', () async {
+      final documents = _PdfDocumentRepository();
+      final renderer = FakeWatermarkRenderer();
+      final controller = _controller(
+        document: _pdfSubsetDocument(),
+        documents: documents,
+        history: _FakeHistoryRepository(),
+        vault: FakeSecureFileVault(),
+        renderer: renderer,
+      );
+
+      // The empty selection resolves to the imported pages, not 0..2.
+      expect(controller.pageCount, 2);
+
+      final bundle = await controller.exportDocument(
+        format: png,
+        jpegQuality: 0.9,
+        pages: const <int>{1, 2},
+      );
+
+      expect(documents.reads, <int>[1, 2]);
+      expect(bundle.files.map((file) => file.fileName), <String>[
+        'report_watermarked_p2.png',
+        'report_watermarked_p3.png',
+      ]);
     });
 
     test('a PDF exported as PDF rebuilds through the renderer', () async {
@@ -138,11 +179,12 @@ void main() {
       final source = Uint8List.fromList(<int>[1, 2, 3]);
       final snapshot = Uint8List.fromList(source);
       final documents = _FakeDocumentRepository(<int, Uint8List>{0: source});
+      final history = _FakeHistoryRepository();
       final writer = _FakeFileWriter();
       final controller = _controller(
         document: _imageDocument(),
         documents: documents,
-        history: _FakeHistoryRepository(),
+        history: history,
         vault: FakeSecureFileVault(),
         renderer: FakeWatermarkRenderer(),
         fileWriter: writer,
@@ -161,8 +203,99 @@ void main() {
       expect(writer.saved.single.$1, 'scan_watermarked.png');
       expect(writer.shared, <String>['/temp/scan_watermarked.png']);
       expect(writer.subject, 'Watermarked document');
+      // The staged plaintext copy never outlives the share call.
+      expect(writer.deleted, <String>['/temp/scan_watermarked.png']);
+      // Saving and then sharing the same output is still one history row.
+      expect(history.recorded, hasLength(1));
       expect(documents.pages[0], snapshot);
       expect(documents.deleteCalls, 0);
+    });
+
+    test('a failing share still deletes the staged plaintext files', () async {
+      final history = _FakeHistoryRepository();
+      final writer = _FakeFileWriter()..failShare = true;
+      final controller = _controller(
+        document: _imageDocument(),
+        documents: _FakeDocumentRepository(<int, Uint8List>{
+          0: Uint8List.fromList(<int>[1, 2, 3]),
+        }),
+        history: history,
+        vault: FakeSecureFileVault(),
+        renderer: FakeWatermarkRenderer(),
+        fileWriter: writer,
+      );
+      final bundle = await controller.exportDocument(
+        format: png,
+        jpegQuality: 0.9,
+        pages: const <int>{0},
+      );
+
+      await expectLater(
+        controller.share(bundle, subject: 'Watermarked document'),
+        throwsA(isA<StateError>()),
+      );
+
+      expect(writer.deleted, <String>['/temp/scan_watermarked.png']);
+      // The share never succeeded, so no completed row was written.
+      expect(history.recorded, isEmpty);
+    });
+
+    test('a failed save records no completed history row', () async {
+      final history = _FakeHistoryRepository();
+      final writer = _FakeFileWriter()..failSave = true;
+      final controller = _controller(
+        document: _imageDocument(),
+        documents: _FakeDocumentRepository(<int, Uint8List>{
+          0: Uint8List.fromList(<int>[1, 2, 3]),
+        }),
+        history: history,
+        vault: FakeSecureFileVault(),
+        renderer: FakeWatermarkRenderer(),
+        fileWriter: writer,
+      );
+      final bundle = await controller.exportDocument(
+        format: png,
+        jpegQuality: 0.9,
+        pages: const <int>{0},
+      );
+
+      await expectLater(
+        controller.save(bundle),
+        throwsA(isA<StateError>()),
+      );
+
+      expect(history.recorded, isEmpty);
+    });
+
+    test('a multi-page save records one row per exported file', () async {
+      final history = _FakeHistoryRepository();
+      final controller = _controller(
+        document: _pdfDocument(),
+        documents: _PdfDocumentRepository(),
+        history: history,
+        vault: FakeSecureFileVault(),
+        renderer: FakeWatermarkRenderer(),
+      );
+      final bundle = await controller.exportDocument(
+        format: png,
+        jpegQuality: 0.9,
+        pages: const <int>{0, 2},
+      );
+
+      await controller.save(bundle);
+
+      expect(history.recorded, hasLength(2));
+      expect(
+        history.recorded.map((entry) => entry.processedRef).toSet(),
+        hasLength(2),
+      );
+      expect(
+        history.recorded.map((entry) => entry.id).toSet(),
+        hasLength(2),
+      );
+      expect(history.recorded.every(
+        (entry) => entry.status == HistoryStatus.completed,
+      ), isTrue);
     });
   });
 }
@@ -174,7 +307,11 @@ ExportController _controller({
   required SecureFileVault vault,
   required FakeWatermarkRenderer renderer,
   ExportFileWriter? fileWriter,
+  List<int> pageIndexes = const <int>[],
+  String Function()? newId,
 }) {
+  var nextId = 0;
+
   return ExportController(
     request: ExportRequest(
       document: document,
@@ -187,13 +324,14 @@ ExportController _controller({
           ),
         ],
       ),
+      pageIndexes: pageIndexes,
     ),
     renderer: renderer,
     documents: documents,
     vault: vault,
     history: history,
     fileWriter: fileWriter ?? _FakeFileWriter(),
-    newId: () => 'history-1',
+    newId: newId ?? () => 'history-${++nextId}',
     clock: () => DateTime.utc(2026),
   );
 }
@@ -223,6 +361,14 @@ DocumentEntity _pdfDocument() {
       DocumentPage(index: 2, widthPt: 250, heightPt: 350),
     ],
     createdAt: DateTime.utc(2026),
+  );
+}
+
+DocumentEntity _pdfSubsetDocument() {
+  final full = _pdfDocument();
+
+  return full.copyWith(
+    pageSizes: full.pageSizes.where((page) => page.index != 0).toList(),
   );
 }
 
@@ -331,13 +477,17 @@ class _FakeHistoryRepository implements HistoryRepository {
 class _FakeFileWriter implements ExportFileWriter {
   final List<(String, Uint8List)> saved = <(String, Uint8List)>[];
   final List<String> shared = <String>[];
+  final List<String> deleted = <String>[];
   String? subject;
+  bool failShare = false;
+  bool failSave = false;
 
   @override
   Future<String> saveToDevice({
     required Uint8List bytes,
     required String fileName,
   }) async {
+    if (failSave) throw StateError('save failed');
     saved.add((fileName, bytes));
 
     return '/saved/$fileName';
@@ -352,10 +502,16 @@ class _FakeFileWriter implements ExportFileWriter {
   }
 
   @override
+  Future<void> deleteTempFile(String path) async {
+    deleted.add(path);
+  }
+
+  @override
   Future<void> shareFiles({
     required List<String> paths,
     required String subject,
   }) async {
+    if (failShare) throw StateError('share failed');
     this.subject = subject;
     shared.addAll(paths);
   }

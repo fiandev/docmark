@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/extensions/localization.dart';
-import '../../../core/theme/theme.dart';
 import '../../../core/widgets/text/typography.dart';
 
 /// JPEG quality, 0.5 to 1.0.
@@ -27,7 +26,7 @@ class ExportQualitySlider extends StatelessWidget {
         Row(
           children: [
             Expanded(child: LabelText(context.locale.export_quality)),
-            LabelText('$percent%'),
+            LabelText(context.locale.export_qualityPercent(percent)),
           ],
         ),
         Slider(

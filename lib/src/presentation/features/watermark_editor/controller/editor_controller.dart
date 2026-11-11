@@ -88,9 +88,16 @@ final class EditorController extends ChangeNotifier {
   }
 
   /// The page the preview shows and new elements are placed on.
+  ///
+  /// This is a SOURCE page index, matching [pageSourceIndices] entries.
   int get pageIndex => _pageIndex;
 
-  int get pageCount => _document.pageCount;
+  /// The pages this document actually carries, as source indices.
+  List<int> get pageSourceIndices => _document.pageSourceIndices;
+
+  /// The imported page count, which a PDF subset may make smaller than the
+  /// source document's `pageCount`.
+  int get pageCount => _document.pageSourceIndices.length;
 
   /// Elements painted on the current page, in paint order.
   List<WatermarkElement> get elementsForCurrentPage =>
@@ -141,7 +148,8 @@ final class EditorController extends ChangeNotifier {
   void setElementPages(String id, Set<int> pages) {
     if (_indexOf(id) < 0) return;
 
-    final all = <int>{for (var i = 0; i < pageCount; i++) i};
+    final sources = _document.pageSourceIndices;
+    final all = sources.toSet();
     final wanted = pages.intersection(all);
     final current = _config.pageAssignments;
     final next = <int, List<String>>{};
@@ -159,12 +167,12 @@ final class EditorController extends ChangeNotifier {
     _commit(_config.copyWith(pageAssignments: next));
   }
 
-  /// Whether [id] paints on every page.
+  /// Whether [id] paints on every imported page.
   bool paintsEveryPage(String id) {
     final assignments = _config.pageAssignments;
     if (assignments.isEmpty) return true;
 
-    for (var page = 0; page < pageCount; page++) {
+    for (final page in _document.pageSourceIndices) {
       if (!(assignments[page] ?? const <String>[]).contains(id)) return false;
     }
 
@@ -268,7 +276,8 @@ final class EditorController extends ChangeNotifier {
 
   // --- Shared properties ---------------------------------------------
 
-  /// Locked elements can still be selected and toggled; gestures skip them.
+  /// Locked elements can still be selected, toggled, re-typed and restyled;
+  /// only position, size, rotation and crop gestures skip them.
   void setLocked(String id, bool locked) {
     final index = _indexOf(id);
     if (index < 0) return;
@@ -294,20 +303,20 @@ final class EditorController extends ChangeNotifier {
   }
 
   void setOpacity(String id, double opacity) {
-    _transform(id, (element) {
+    _edit(id, (element) {
       return element.copyWith(opacity: opacity.clamp(0.0, 1.0).toDouble());
     });
   }
 
   void setRotation(String id, double degrees) {
-    _transform(id, (element) {
+    _transformGeometry(id, (element) {
       return element.copyWith(rotationDeg: _normalizeDegrees(degrees));
     });
   }
 
   /// Moves [id] by a normalized delta, clamped to the page.
   void moveBy(String id, NormalizedOffset delta) {
-    _transform(id, (element) {
+    _transformGeometry(id, (element) {
       return element.copyWith(
         rect: WatermarkGeometry.translate(element.rect, delta),
       );
@@ -316,7 +325,7 @@ final class EditorController extends ChangeNotifier {
 
   /// Writes a rect computed by the gesture layer.
   void setRect(String id, NormalizedRect rect) {
-    _transform(id, (element) {
+    _transformGeometry(id, (element) {
       return element.copyWith(rect: rect.clampToPage());
     });
   }
@@ -339,7 +348,9 @@ final class EditorController extends ChangeNotifier {
     BackgroundSpec? background,
     bool clearBackground = false,
   }) {
-    _transform(id, (element) {
+    // Content and appearance stay editable on a locked element; only the
+    // rotation field is geometry and therefore ignored while locked.
+    _edit(id, (element) {
       if (element is! TextWatermark) return element;
 
       return element.copyWith(
@@ -350,8 +361,9 @@ final class EditorController extends ChangeNotifier {
         bold: bold,
         italic: italic,
         align: align,
-        rotationDeg:
-            rotationDeg == null ? null : _normalizeDegrees(rotationDeg),
+        rotationDeg: element.locked || rotationDeg == null
+            ? null
+            : _normalizeDegrees(rotationDeg),
         opacity: opacity,
         outline: outline,
         clearOutline: clearOutline,
@@ -363,6 +375,8 @@ final class EditorController extends ChangeNotifier {
 
   // --- Image appearance ----------------------------------------------
 
+  /// Appearance stays editable while locked. Rotation and crop are geometry
+  /// changes, so they are ignored until the element is unlocked.
   void updateImage(
     String id, {
     double? opacity,
@@ -371,16 +385,17 @@ final class EditorController extends ChangeNotifier {
     CropRect? crop,
     bool clearCrop = false,
   }) {
-    _transform(id, (element) {
+    _edit(id, (element) {
       if (element is! ImageWatermark) return element;
 
       return element.copyWith(
         opacity: opacity,
-        rotationDeg:
-            rotationDeg == null ? null : _normalizeDegrees(rotationDeg),
+        rotationDeg: element.locked || rotationDeg == null
+            ? null
+            : _normalizeDegrees(rotationDeg),
         lockAspect: lockAspect,
-        crop: crop,
-        clearCrop: clearCrop,
+        crop: element.locked ? null : crop,
+        clearCrop: element.locked ? false : clearCrop,
       );
     });
   }
@@ -515,11 +530,11 @@ final class EditorController extends ChangeNotifier {
     _commit(_config.copyWith(elements: elements));
   }
 
-  /// Applies [transform] to the element with [id] unless it is locked.
+  /// Applies [transform] to the element with [id] without any lock guard.
   ///
-  /// Locking is enforced here as well as in the gesture layer, so a stale
-  /// panel or a keyboard nudge cannot move a locked element either.
-  void _transform(
+  /// Locking protects position and size, not what the element says or looks
+  /// like: a locked element can still be re-typed, recoloured or faded.
+  void _edit(
     String id,
     WatermarkElement Function(WatermarkElement element) transform,
   ) {
@@ -527,14 +542,28 @@ final class EditorController extends ChangeNotifier {
     if (index < 0) return;
 
     final current = _config.elements[index];
-    if (current.locked) return;
-
     final next = transform(current);
     if (next == current) return;
 
     final elements = List<WatermarkElement>.of(_config.elements);
     elements[index] = next;
     _commit(_config.copyWith(elements: elements));
+  }
+
+  /// Applies a geometry [transform] unless the element is locked.
+  ///
+  /// Locking is enforced here as well as in the gesture layer, so a stale
+  /// panel or a keyboard nudge cannot move, resize, rotate or crop a locked
+  /// element either.
+  void _transformGeometry(
+    String id,
+    WatermarkElement Function(WatermarkElement element) transform,
+  ) {
+    final index = _indexOf(id);
+    if (index < 0) return;
+    if (_config.elements[index].locked) return;
+
+    _edit(id, transform);
   }
 
   void _commit(WatermarkConfig next, {bool force = false}) {
@@ -613,10 +642,21 @@ final class EditorController extends ChangeNotifier {
     );
   }
 
+  /// Clamps a requested SOURCE page index to one the document carries.
+  ///
+  /// A subset import has no row for the skipped sources, so the nearest
+  /// imported page at or above [index] wins (the last page when past the
+  /// end).
   static int _pageWithin(DocumentEntity document, int index) {
-    if (document.pageCount <= 0) return 0;
+    final sources = document.pageSourceIndices;
+    if (sources.isEmpty) return 0;
+    if (sources.contains(index)) return index;
 
-    return index.clamp(0, document.pageCount - 1).toInt();
+    for (final source in sources) {
+      if (source >= index) return source;
+    }
+
+    return sources.last;
   }
 
   static double _normalizeDegrees(double degrees) {

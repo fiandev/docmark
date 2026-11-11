@@ -2,9 +2,9 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_template/src/data/services/media/document_pick_service.dart';
-import 'package:flutter_template/src/domain/repositories/document_repository.dart';
-import 'package:flutter_template/src/presentation/features/document_import/controller/document_import_controller.dart';
+import 'package:docmark/src/data/services/media/document_pick_service.dart';
+import 'package:docmark/src/domain/repositories/document_repository.dart';
+import 'package:docmark/src/presentation/features/document_import/controller/document_import_controller.dart';
 
 import 'support/import_fakes.dart';
 

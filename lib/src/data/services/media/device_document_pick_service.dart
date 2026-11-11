@@ -33,12 +33,14 @@ final class DeviceDocumentPickService implements DocumentPickService {
 
   @override
   Future<PickedDocument?> pickFromFiles() async {
-    final picked = await FilePicker.pickFile(
+    final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: _documentExtensions,
+      allowMultiple: false,
     );
-    if (picked == null) return null;
+    if (result == null || result.files.isEmpty) return null;
 
+    final picked = result.files.single;
     return _read(picked.name, await picked.readAsBytes());
   }
 

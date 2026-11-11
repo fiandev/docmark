@@ -14,8 +14,10 @@ final class PinVerifier {
   const PinVerifier({this.iterations = defaultIterations});
 
   /// The floor the app ships with. Lowering it in a caller is a security
-  /// regression; tests may pass a smaller value to stay fast.
-  static const int defaultIterations = 300000;
+  /// regression; tests may pass a smaller value to stay fast. Existing
+  /// blobs keep their own stored count, so a raised default does not lock
+  /// anyone out — the controller verifies with the blob's value.
+  static const int defaultIterations = 600000;
 
   /// 128 bits of salt is plenty; the stored blob carries it next to the
   /// verifier.

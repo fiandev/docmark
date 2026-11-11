@@ -20,6 +20,7 @@ String? appLockFailureMessage(
     AppLockPinMismatch() => l10n.app_lock_pin_mismatch,
     AppLockNotEnabled() => l10n.app_lock_disabled_body,
     AppLockStorageFailure() ||
-    AppLockUnexpectedFailure() => l10n.failures_unknown,
+    AppLockUnexpectedFailure() ||
+    AppLockResetNotConfirmed() => l10n.failures_unknown,
   };
 }

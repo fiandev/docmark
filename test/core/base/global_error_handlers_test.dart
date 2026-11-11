@@ -1,7 +1,7 @@
 import 'dart:ui' show ErrorCallback;
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_template/src/core/base/global_error_handlers.dart';
+import 'package:docmark/src/core/base/global_error_handlers.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'fake_crash_reporter.dart';

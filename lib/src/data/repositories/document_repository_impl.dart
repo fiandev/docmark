@@ -24,9 +24,10 @@ import '../mappers/docmark_mappers.dart';
 ///
 /// The import path reads bytes the picker already handed over, probes
 /// them, and writes them straight into the vault; the source file on disk
-/// is never opened or copied back out. Deletion removes the bytes before
-/// the rows, because a row without a file is harmless while a file without
-/// a row can never be found again and would stay decryptable forever.
+/// is never opened or copied back out. Deletion commits the row removal
+/// first and only then erases bytes: an orphan blob can be swept, while a
+/// row whose blob is already gone is a dangling reference the user cannot
+/// repair.
 final class DocumentRepositoryImpl extends Repository
     implements DocumentRepository {
   DocumentRepositoryImpl({
@@ -138,14 +139,14 @@ final class DocumentRepositoryImpl extends Repository
   ) {
     return asyncGuard(
       () async {
-        final document = await _documents.find(documentId);
-        if (document == null) throw _MissingDocument(documentId);
-        // Page identity is the source document's page numbering, not the
-        // subset the importer recorded: `ExportRequest.resolvedPages`
-        // walks 0..pageCount-1, so that is the range to accept here.
-        if (pageIndex < 0 || pageIndex >= document.pageCount) {
-          throw _MissingDocument('$documentId/$pageIndex');
+        if (await _documents.find(documentId) == null) {
+          throw _MissingDocument(documentId);
         }
+        // Page identity is the source document's page numbering, and only
+        // the pages the importer recorded in `document_pages` are readable:
+        // a PDF subset import has no row for a skipped source page.
+        final page = await _documents.findPage(documentId, pageIndex);
+        if (page == null) throw _MissingDocument('$documentId/$pageIndex');
         final source = await _documents.findSourceAsset(documentId);
         if (source == null) throw _MissingDocument(documentId);
 
@@ -197,13 +198,22 @@ final class DocumentRepositoryImpl extends Repository
           ownerId: documentId,
         );
 
-        // Drop this document's claims first; what remains is the only
-        // evidence of whether a shared image is still needed.
-        await _images.removeLinks(
-          ownerType: WatermarkAssetStore.documentOwner,
-          ownerId: documentId,
-        );
+        // Rows first, in one transaction. If the commit fails, nothing was
+        // erased and a retry sees the document intact; if a blob delete
+        // fails afterwards, the row is already gone and the stray encrypted
+        // file is unreachable garbage rather than data loss.
+        await _database.transaction(() async {
+          await _images.removeLinks(
+            ownerType: WatermarkAssetStore.documentOwner,
+            ownerId: documentId,
+          );
+          await _documents.deletePages(documentId);
+          await _documents.deleteSourceAssets(documentId);
+          await _documents.delete(documentId);
+        });
 
+        // Read the remaining claims only after this document's links are
+        // gone: what is left is the evidence another owner still needs it.
         if (source != null && !await _images.isShared(source.assetId)) {
           await _vault.delete(
             AssetRef(id: source.assetId, relativePath: source.blobPath),
@@ -212,12 +222,6 @@ final class DocumentRepositoryImpl extends Repository
         for (final assetId in linked) {
           await _images.deleteIfUnreferenced(assetId);
         }
-
-        await _database.transaction(() async {
-          await _documents.deletePages(documentId);
-          await _documents.deleteSourceAssets(documentId);
-          await _documents.delete(documentId);
-        });
         await _deleteTempFiles(documentId);
 
         return Unit.value;
@@ -303,17 +307,21 @@ final class DocumentRepositoryImpl extends Repository
       }
     }
 
-    final width = (probe.width ?? _a4WidthPt).toDouble();
-    final height = (probe.height ?? _a4HeightPt).toDouble();
+    final fallbackWidth = (probe.width ?? _a4WidthPt).toDouble();
+    final fallbackHeight = (probe.height ?? _a4HeightPt).toDouble();
 
     return indexes
-        .map(
-          (index) => DocumentPage(
+        .map((index) {
+          // Each selected page keeps its own MediaBox size; a mixed-size PDF
+          // must not inherit the first page's dimensions.
+          final size = probe.sizeForPage(index);
+
+          return DocumentPage(
             index: index,
-            widthPt: width,
-            heightPt: height,
-          ),
-        )
+            widthPt: size?.width ?? fallbackWidth,
+            heightPt: size?.height ?? fallbackHeight,
+          );
+        })
         .toList();
   }
 

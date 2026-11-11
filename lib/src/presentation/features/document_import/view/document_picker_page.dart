@@ -6,9 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gap/gap.dart';
 
+import '../../../../core/di/features/history_providers.dart';
 import '../../../../core/di/features/import_providers.dart';
+import '../../../../core/di/features/presets_providers.dart';
 import '../../../../core/extensions/localization.dart';
-import '../../../../core/router/routes.dart';
+import '../../../core/router/routes.dart';
 import '../../../../domain/entities/document.dart';
 import '../../../../domain/failures/business_failure.dart';
 import '../../../../domain/repositories/document_repository.dart';
@@ -21,6 +23,10 @@ import '../controller/document_import_controller.dart';
 /// OWNER: T2 (import flow). The constructor signature is frozen; all
 /// plugins arrive through providers so widget tests can run without a
 /// platform channel.
+///
+/// The picker also owns the pending-preset hand-off: it keeps the id for
+/// the editor to consume, and clears it on cancel, failure, or an abandoned
+/// page so a stale preset cannot leak into a later import.
 class DocumentPickerPage extends ConsumerStatefulWidget {
   const DocumentPickerPage({super.key});
 
@@ -35,9 +41,8 @@ enum _PickerStage { idle, reading, selectingPages, importing, error }
 enum _PickerError { invalidFormat, failed }
 
 class _DocumentPickerPageState extends ConsumerState<DocumentPickerPage> {
-  static const double _pageTileAspectRatio = 0.72;
-
   late final DocumentImportController _controller;
+  late final PendingPresetId _pendingPresets;
 
   _PickerStage _stage = _PickerStage.idle;
   _PickerError? _error;
@@ -45,12 +50,17 @@ class _DocumentPickerPageState extends ConsumerState<DocumentPickerPage> {
   int _pdfPageCount = 0;
   int _previewToken = 0;
 
+  /// Set once the import hands a document to the editor, so [dispose] knows
+  /// the pending preset was consumed rather than abandoned.
+  bool _handedOff = false;
+
   final Set<int> _selectedPages = <int>{};
   final Map<int, Uint8List> _thumbnails = <int, Uint8List>{};
 
   @override
   void initState() {
     super.initState();
+    _pendingPresets = ref.read(pendingPresetIdProvider.notifier);
     _controller = DocumentImportController(
       documents: ref.read(documentRepositoryProvider),
       normalizer: ref.read(mediaNormalizerServiceProvider),
@@ -60,179 +70,40 @@ class _DocumentPickerPageState extends ConsumerState<DocumentPickerPage> {
   }
 
   @override
+  void dispose() {
+    if (!_handedOff) _pendingPresets.clear();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          tooltip: context.locale.common_back,
+          onPressed: _dismiss,
+          icon: const Icon(Icons.arrow_back),
+        ),
         title: HeadingLevel3Text(context.locale.import_title),
       ),
-      body: SafeArea(child: _body(context)),
-    );
-  }
-
-  Widget _body(BuildContext context) {
-    return switch (_stage) {
-      _PickerStage.idle => _idle(context),
-      _PickerStage.reading => _busy(context, context.locale.common_loading),
-      _PickerStage.selectingPages => _pageSelection(context),
-      _PickerStage.importing => _busy(context, context.locale.import_importing),
-      _PickerStage.error => _errorView(context),
-    };
-  }
-
-  Widget _idle(BuildContext context) {
-    return ListView(
-      padding: EdgeInsets.all(context.dimensions.space.s16),
-      children: [
-        FilledButton.icon(
-          onPressed: () => unawaited(_pick(ImportSource.gallery)),
-          icon: const Icon(Icons.photo_library_outlined),
-          label: Text(context.locale.import_fromGallery),
-        ),
-        Gap(context.dimensions.space.s12),
-        OutlinedButton.icon(
-          onPressed: () => unawaited(_pick(ImportSource.filePicker)),
-          icon: const Icon(Icons.folder_open_outlined),
-          label: Text(context.locale.import_fromFiles),
-        ),
-        Gap(context.dimensions.space.s24),
-        BodySmallText.muted(context.locale.import_supportedFormats),
-        Gap(context.dimensions.space.s8),
-        BodySmallText.muted(context.locale.import_neverModified),
-        Gap(context.dimensions.space.s24),
-        OutlinedButton(
-          onPressed: () => context.pop(),
-          child: Text(context.locale.common_cancel),
-        ),
-      ],
-    );
-  }
-
-  Widget _busy(BuildContext context, String message) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: context.dimensions.size.iconLarge,
-            height: context.dimensions.size.iconLarge,
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(
-                context.color.primary.defaultValue,
-              ),
-            ),
-          ),
-          Gap(context.dimensions.space.s16),
-          BodySmallText.muted(message),
-        ],
-      ),
-    );
-  }
-
-  Widget _errorView(BuildContext context) {
-    final message = _error == _PickerError.invalidFormat
-        ? context.locale.import_invalidFormat
-        : context.locale.import_error;
-
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(context.dimensions.space.s24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: context.dimensions.size.iconDisplay,
-              color: context.color.text.muted,
-            ),
-            Gap(context.dimensions.space.s8),
-            BodySmallText.muted(message, textAlign: TextAlign.center),
-            Gap(context.dimensions.space.s24),
-            FilledButton(
-              onPressed: _reset,
-              child: Text(context.locale.common_retry),
-            ),
-          ],
+      body: SafeArea(
+        child: _PickerBody(
+          stage: _stage,
+          error: _error,
+          hasPdfRequest: _pdfRequest != null,
+          pageCount: _pdfPageCount,
+          thumbnails: _thumbnails,
+          selectedPages: _selectedPages,
+          onGallery: () => unawaited(_pick(ImportSource.gallery)),
+          onFiles: () => unawaited(_pick(ImportSource.filePicker)),
+          onDismiss: _dismiss,
+          onReset: _reset,
+          onTogglePage: _togglePage,
+          onImportSelected: _selectedPages.isEmpty
+              ? null
+              : () => unawaited(_importSelected()),
         ),
       ),
-    );
-  }
-
-  Widget _pageSelection(BuildContext context) {
-    if (_pdfRequest == null) return _idle(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-            context.dimensions.space.s16,
-            context.dimensions.space.s16,
-            context.dimensions.space.s16,
-            context.dimensions.space.s8,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              HeadingLevel3Text(context.locale.import_pageSelectTitle),
-              Gap(context.dimensions.space.s4),
-              BodySmallText.muted(context.locale.import_pageSelectBody),
-            ],
-          ),
-        ),
-        Expanded(
-          child: GridView.builder(
-            padding: EdgeInsets.symmetric(
-              horizontal: context.dimensions.space.s16,
-            ),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: context.dimensions.space.s12,
-              crossAxisSpacing: context.dimensions.space.s12,
-              childAspectRatio: _pageTileAspectRatio,
-            ),
-            itemCount: _pdfPageCount,
-            itemBuilder: (context, index) {
-              return _PdfPageTile(
-                pageIndex: index,
-                thumbnail: _thumbnails[index],
-                selected: _selectedPages.contains(index),
-                onTap: () => _togglePage(index),
-              );
-            },
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.all(context.dimensions.space.s16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              BodySmallText.muted(
-                context.locale.import_pdfPagesSelected(_selectedPages.length),
-              ),
-              Gap(context.dimensions.space.s12),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _reset,
-                      child: Text(context.locale.common_cancel),
-                    ),
-                  ),
-                  Gap(context.dimensions.space.s12),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: _selectedPages.isEmpty
-                          ? null
-                          : () => unawaited(_importSelected()),
-                      child: Text(context.locale.import_action),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -263,6 +134,7 @@ class _DocumentPickerPageState extends ConsumerState<DocumentPickerPage> {
       case ImportCancelled():
         _reset();
       case ImportNotSupported():
+        _pendingPresets.clear();
         setState(() {
           _stage = _PickerStage.error;
           _error = _PickerError.invalidFormat;
@@ -278,6 +150,7 @@ class _DocumentPickerPageState extends ConsumerState<DocumentPickerPage> {
       case ImportSucceeded(:final document):
         _open(document);
       case ImportFailed():
+        _pendingPresets.clear();
         setState(() {
           _stage = _PickerStage.error;
           _error = _PickerError.failed;
@@ -311,8 +184,10 @@ class _DocumentPickerPageState extends ConsumerState<DocumentPickerPage> {
       case ImportSucceeded(:final document):
         _open(document);
       case ImportCancelled():
+        _pendingPresets.clear();
         setState(() => _stage = _PickerStage.selectingPages);
       default:
+        _pendingPresets.clear();
         setState(() {
           _stage = _PickerStage.error;
           _error = _PickerError.failed;
@@ -341,6 +216,7 @@ class _DocumentPickerPageState extends ConsumerState<DocumentPickerPage> {
 
   void _reset() {
     if (!mounted) return;
+    _pendingPresets.clear();
     setState(() {
       _stage = _PickerStage.idle;
       _error = null;
@@ -352,10 +228,291 @@ class _DocumentPickerPageState extends ConsumerState<DocumentPickerPage> {
     });
   }
 
+  /// Leaves the picker: pops when there is a page underneath, otherwise
+  /// returns to Home so an entry point that replaced the stack is never a
+  /// dead end.
+  void _dismiss() {
+    _pendingPresets.clear();
+    if (Navigator.of(context).canPop()) {
+      context.pop();
+    } else {
+      context.goNamed(Routes.home.name);
+    }
+  }
+
   void _open(DocumentEntity document) {
+    // The editor consumes the pending preset; leave it in place.
+    _handedOff = true;
+    // A successful import changes what Home's recent strip is built from.
+    ref.invalidate(recentDocumentsProvider);
     context.goNamed(
       Routes.editor.name,
       pathParameters: <String, String>{'documentId': document.id},
+    );
+  }
+}
+
+class _PickerBody extends StatelessWidget {
+  const _PickerBody({
+    required this.stage,
+    required this.error,
+    required this.hasPdfRequest,
+    required this.pageCount,
+    required this.thumbnails,
+    required this.selectedPages,
+    required this.onGallery,
+    required this.onFiles,
+    required this.onDismiss,
+    required this.onReset,
+    required this.onTogglePage,
+    required this.onImportSelected,
+  });
+
+  final _PickerStage stage;
+  final _PickerError? error;
+  final bool hasPdfRequest;
+  final int pageCount;
+  final Map<int, Uint8List> thumbnails;
+  final Set<int> selectedPages;
+  final VoidCallback onGallery;
+  final VoidCallback onFiles;
+  final VoidCallback onDismiss;
+  final VoidCallback onReset;
+  final ValueChanged<int> onTogglePage;
+  final VoidCallback? onImportSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (stage) {
+      _PickerStage.idle => _IdleView(
+        onGallery: onGallery,
+        onFiles: onFiles,
+        onCancel: onDismiss,
+      ),
+      _PickerStage.reading => _BusyView(
+        message: context.locale.common_loading,
+      ),
+      _PickerStage.selectingPages => hasPdfRequest
+          ? _PageSelectionView(
+              pageCount: pageCount,
+              thumbnails: thumbnails,
+              selectedPages: selectedPages,
+              onTogglePage: onTogglePage,
+              onCancel: onDismiss,
+              onImportSelected: onImportSelected,
+            )
+          : _IdleView(
+              onGallery: onGallery,
+              onFiles: onFiles,
+              onCancel: onDismiss,
+            ),
+      _PickerStage.importing => _BusyView(
+        message: context.locale.import_importing,
+      ),
+      _PickerStage.error => _ErrorView(
+        message: error == _PickerError.invalidFormat
+            ? context.locale.import_invalidFormat
+            : context.locale.import_error,
+        onRetry: onReset,
+      ),
+    };
+  }
+}
+
+class _IdleView extends StatelessWidget {
+  const _IdleView({
+    required this.onGallery,
+    required this.onFiles,
+    required this.onCancel,
+  });
+
+  final VoidCallback onGallery;
+  final VoidCallback onFiles;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: EdgeInsets.all(context.dimensions.space.s16),
+      children: [
+        FilledButton.icon(
+          onPressed: onGallery,
+          icon: const Icon(Icons.photo_library_outlined),
+          label: Text(context.locale.import_fromGallery),
+        ),
+        Gap(context.dimensions.space.s12),
+        OutlinedButton.icon(
+          onPressed: onFiles,
+          icon: const Icon(Icons.folder_open_outlined),
+          label: Text(context.locale.import_fromFiles),
+        ),
+        Gap(context.dimensions.space.s24),
+        BodySmallText.muted(context.locale.import_supportedFormats),
+        Gap(context.dimensions.space.s8),
+        BodySmallText.muted(context.locale.import_neverModified),
+        Gap(context.dimensions.space.s24),
+        OutlinedButton(
+          onPressed: onCancel,
+          child: Text(context.locale.common_cancel),
+        ),
+      ],
+    );
+  }
+}
+
+class _BusyView extends StatelessWidget {
+  const _BusyView({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: context.dimensions.size.iconLarge,
+            height: context.dimensions.size.iconLarge,
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(
+                context.color.primary.defaultValue,
+              ),
+            ),
+          ),
+          Gap(context.dimensions.space.s16),
+          BodySmallText.muted(message),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(context.dimensions.space.s24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: context.dimensions.size.iconDisplay,
+              color: context.color.text.muted,
+            ),
+            Gap(context.dimensions.space.s8),
+            BodySmallText.muted(message, textAlign: TextAlign.center),
+            Gap(context.dimensions.space.s24),
+            FilledButton(
+              onPressed: onRetry,
+              child: Text(context.locale.common_retry),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PageSelectionView extends StatelessWidget {
+  const _PageSelectionView({
+    required this.pageCount,
+    required this.thumbnails,
+    required this.selectedPages,
+    required this.onTogglePage,
+    required this.onCancel,
+    required this.onImportSelected,
+  });
+
+  static const double _pageTileAspectRatio = 0.72;
+
+  final int pageCount;
+  final Map<int, Uint8List> thumbnails;
+  final Set<int> selectedPages;
+  final ValueChanged<int> onTogglePage;
+  final VoidCallback onCancel;
+  final VoidCallback? onImportSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            context.dimensions.space.s16,
+            context.dimensions.space.s16,
+            context.dimensions.space.s16,
+            context.dimensions.space.s8,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              HeadingLevel3Text(context.locale.import_pageSelectTitle),
+              Gap(context.dimensions.space.s4),
+              BodySmallText.muted(context.locale.import_pageSelectBody),
+            ],
+          ),
+        ),
+        Expanded(
+          child: GridView.builder(
+            padding: EdgeInsets.symmetric(
+              horizontal: context.dimensions.space.s16,
+            ),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: context.dimensions.space.s12,
+              crossAxisSpacing: context.dimensions.space.s12,
+              childAspectRatio: _pageTileAspectRatio,
+            ),
+            itemCount: pageCount,
+            itemBuilder: (context, index) {
+              return _PdfPageTile(
+                pageIndex: index,
+                thumbnail: thumbnails[index],
+                selected: selectedPages.contains(index),
+                onTap: () => onTogglePage(index),
+              );
+            },
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.all(context.dimensions.space.s16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              BodySmallText.muted(
+                context.locale.import_pdfPagesSelected(selectedPages.length),
+              ),
+              Gap(context.dimensions.space.s12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: onCancel,
+                      child: Text(context.locale.common_cancel),
+                    ),
+                  ),
+                  Gap(context.dimensions.space.s12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: onImportSelected,
+                      child: Text(context.locale.import_action),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

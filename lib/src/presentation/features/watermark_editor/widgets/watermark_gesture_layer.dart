@@ -7,6 +7,7 @@ import '../../../../domain/entities/watermark_element.dart';
 import '../../../../domain/services/watermark_geometry.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/watermark/elements_overlay.dart';
+import '../../../core/widgets/watermark/watermark_canvas.dart';
 import '../controller/editor_controller.dart';
 import '../controller/editor_gestures.dart';
 

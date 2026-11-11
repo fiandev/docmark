@@ -127,4 +127,23 @@ final class AssetDao {
 
     return rows.isNotEmpty;
   }
+
+  /// Empties the owner-link table.
+  ///
+  /// A full wipe removes owners first and assets last, so this is the half
+  /// that stops the registry rows from dangling.
+  Future<void> deleteAllLinks() async {
+    await _db.delete(_db.assetLinks).go();
+  }
+
+  /// Empties the watermark asset registry.
+  Future<void> deleteAllAssets() async {
+    await _db.delete(_db.watermarkAssets).go();
+  }
+
+  /// Empties both the owner links and the registry.
+  Future<void> deleteAll() async {
+    await deleteAllLinks();
+    await deleteAllAssets();
+  }
 }

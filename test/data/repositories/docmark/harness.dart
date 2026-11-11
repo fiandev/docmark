@@ -2,20 +2,20 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:drift/native.dart';
-import 'package:flutter_template/src/core/base/result.dart';
-import 'package:flutter_template/src/core/security/encryption_service.dart';
-import 'package:flutter_template/src/core/security/key_manager.dart';
-import 'package:flutter_template/src/core/security/src/aes_gcm_encryption_service.dart';
-import 'package:flutter_template/src/core/storage/db/app_database.dart';
-import 'package:flutter_template/src/core/storage/db/dao/asset_dao.dart';
-import 'package:flutter_template/src/core/storage/vault/secure_file_vault_impl.dart';
-import 'package:flutter_template/src/core/storage/vault/watermark_asset_store.dart';
-import 'package:flutter_template/src/data/repositories/document_repository_impl.dart';
-import 'package:flutter_template/src/data/repositories/history_repository_impl.dart';
-import 'package:flutter_template/src/data/repositories/preset_repository_impl.dart';
-import 'package:flutter_template/src/domain/entities/image_format.dart';
-import 'package:flutter_template/src/domain/failures/business_failure.dart';
-import 'package:flutter_template/src/domain/services/media_normalizer.dart';
+import 'package:docmark/src/core/base/result.dart';
+import 'package:docmark/src/core/security/encryption_service.dart';
+import 'package:docmark/src/core/security/key_manager.dart';
+import 'package:docmark/src/core/security/src/aes_gcm_encryption_service.dart';
+import 'package:docmark/src/core/storage/db/app_database.dart';
+import 'package:docmark/src/core/storage/db/dao/asset_dao.dart';
+import 'package:docmark/src/core/storage/vault/secure_file_vault_impl.dart';
+import 'package:docmark/src/core/storage/vault/watermark_asset_store.dart';
+import 'package:docmark/src/data/repositories/document_repository_impl.dart';
+import 'package:docmark/src/data/repositories/history_repository_impl.dart';
+import 'package:docmark/src/data/repositories/preset_repository_impl.dart';
+import 'package:docmark/src/domain/entities/image_format.dart';
+import 'package:docmark/src/domain/failures/business_failure.dart';
+import 'package:docmark/src/domain/services/media_normalizer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../core/base/fake_crash_reporter.dart';
@@ -116,10 +116,19 @@ final class _StaticKeyManager implements KeyManager {
 
 /// Detects real file signatures and reports fixed dimensions. The point
 /// is the repository's page/asset bookkeeping, not image decoding.
+///
+/// PDF pages deliberately differ so a mixed-size import can be asserted.
 final class ProbeOnlyNormalizer implements MediaNormalizerService {
   @override
   Future<MediaProbe> probe(Uint8List bytes) async {
     final format = detectFormat(bytes);
+    final pageSizes = format == ImageFormat.pdf
+        ? const <SizePt>[
+            SizePt(width: 612, height: 792),
+            SizePt(width: 400, height: 600),
+            SizePt(width: 300, height: 500),
+          ]
+        : const <SizePt>[];
 
     return MediaProbe(
       format: format,
@@ -127,6 +136,7 @@ final class ProbeOnlyNormalizer implements MediaNormalizerService {
       height: format == ImageFormat.pdf ? 792 : 600,
       hasAlpha: format == ImageFormat.png,
       pageCount: format == ImageFormat.pdf ? 3 : null,
+      pageSizesPt: pageSizes,
     );
   }
 

@@ -1,8 +1,8 @@
-import 'package:flutter_template/src/core/base/base.dart';
-import 'package:flutter_template/src/core/security/lock/app_lock_failure.dart';
-import 'package:flutter_template/src/core/security/lock/app_lock_service.dart';
-import 'package:flutter_template/src/core/security/lock/lock_controller_impl.dart';
-import 'package:flutter_template/src/core/security/lock_controller.dart';
+import 'package:docmark/src/core/base/base.dart';
+import 'package:docmark/src/core/security/lock/app_lock_failure.dart';
+import 'package:docmark/src/core/security/lock/app_lock_service.dart';
+import 'package:docmark/src/core/security/lock/lock_controller_impl.dart';
+import 'package:docmark/src/core/security/lock_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/app_lock_fakes.dart';
@@ -313,6 +313,90 @@ void main() {
         LockStatus.locked,
       ]);
     });
+
+    test('a failed state read is retried on the next initialize', () async {
+      await controller.enableLock(pin: _pin);
+      store.failReads = 1;
+
+      final restarted = buildController(
+        store: store,
+        biometrics: biometrics,
+        clock: clock,
+      );
+      await restarted.initialize();
+
+      // Fail closed, but not permanently: the failed read was not cached.
+      expect(restarted.state.status, LockStatus.locked);
+      expect(restarted.state.isEnabled, isFalse);
+
+      await restarted.initialize();
+
+      expect(restarted.state.isEnabled, isTrue);
+      expect(successValue(await restarted.verifyPin(_pin)), isTrue);
+    });
+
+    test(
+      'the failed-attempt counter and cooldown survive a restart',
+      () async {
+        await controller.enableLock(pin: _pin);
+
+        for (
+          var attempt = 0;
+          attempt < AppLockDefaults.maxPinAttempts;
+          attempt++
+        ) {
+          await controller.verifyPin(_wrongPin);
+        }
+        expect(controller.state.failedAttempts, AppLockDefaults.maxPinAttempts);
+
+        final restarted = buildController(
+          store: store,
+          biometrics: biometrics,
+          clock: clock,
+        );
+        await restarted.initialize();
+
+        expect(restarted.state.failedAttempts, AppLockDefaults.maxPinAttempts);
+        final blocked = failureOf(await restarted.verifyPin(_wrongPin));
+        expect(blocked, isA<AppLockLockedOut>());
+        expect(
+          (blocked! as AppLockLockedOut).remaining,
+          AppLockDefaults.initialBackoff,
+        );
+
+        clock.advance(AppLockDefaults.initialBackoff);
+        expect(successValue(await restarted.verifyPin(_pin)), isTrue);
+
+        final afterUnlock = buildController(
+          store: store,
+          biometrics: biometrics,
+          clock: clock,
+        );
+        await afterUnlock.initialize();
+
+        expect(afterUnlock.state.failedAttempts, 0);
+        expect(afterUnlock.state.lockedUntil, isNull);
+      },
+    );
+
+    test(
+      'resetLockData needs confirmation and clears only the lock blob',
+      () async {
+        await controller.enableLock(pin: _pin);
+
+        final refused = failureOf(await controller.resetLockData());
+        expect(refused, isA<AppLockResetNotConfirmed>());
+        expect(controller.state.isEnabled, isTrue);
+        expect(store.value, isNotNull);
+
+        final reset = await controller.resetLockData(confirmed: true);
+
+        expect(reset, isA<Success<Unit, AppLockFailure>>());
+        expect(store.value, isNull);
+        expect(controller.state.status, LockStatus.disabled);
+        expect(controller.state.isEnabled, isFalse);
+      },
+    );
 
     test('the frozen API throws AppLockException', () async {
       await controller.initialize();

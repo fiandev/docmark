@@ -133,6 +133,8 @@ final class WatermarkRendererImpl implements WatermarkRenderer {
         : request.options.pdfDpi / 72;
 
     final pages = <RasterPdfPage>[];
+    // Every index here is a SOURCE page index; the request already narrowed
+    // that to the imported subset.
     for (final pageIndex in request.resolvedPages) {
       final bytes = await _pageLoader(request.document.id, pageIndex);
       final documentPage = request.document.pageAt(pageIndex);

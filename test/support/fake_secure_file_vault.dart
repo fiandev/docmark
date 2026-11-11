@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:flutter_template/src/core/security/secure_file_vault.dart';
+import 'package:docmark/src/core/security/secure_file_vault.dart';
 
 /// In-memory [SecureFileVault] for tests and placeholder repositories.
 ///

@@ -159,8 +159,11 @@ List<WatermarkElement> decodeElements(String source) {
         .toList();
   } on FormatException {
     rethrow;
-  } catch (error) {
-    throw FormatException('Stored elements are malformed: $error');
+  } catch (_) {
+    // The inner exception can quote stored JSON (element text, asset ids).
+    // The caller only needs to know the row is unreadable, so the reason
+    // stays generic.
+    throw const FormatException('Stored elements are malformed');
   }
 }
 

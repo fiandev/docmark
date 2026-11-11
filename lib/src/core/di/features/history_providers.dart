@@ -11,6 +11,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/base/result.dart';
 import '../../../data/repositories/history_repository_impl.dart';
+import '../../../domain/entities/document.dart';
 import '../../../domain/entities/history.dart';
 import '../../../domain/repositories/history_repository.dart';
 import '../dependency_injection.dart';
@@ -116,4 +117,19 @@ Future<Uint8List?> historyPreview(Ref ref, String entryId) async {
   } catch (_) {
     return null;
   }
+}
+
+/// The watermark configuration handed from History to a fresh import.
+///
+/// "Reuse configuration" can outlive the original document: the entry's
+/// config snapshot is kept here while the user picks the replacement, and
+/// the editor consumes it exactly once when the new session opens.
+@Riverpod(keepAlive: true)
+class PendingWatermarkConfig extends _$PendingWatermarkConfig {
+  @override
+  WatermarkConfig? build() => null;
+
+  void set(WatermarkConfig config) => state = config;
+
+  void clear() => state = null;
 }

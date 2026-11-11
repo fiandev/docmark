@@ -65,6 +65,11 @@ final class AppLockUnexpectedFailure extends AppLockFailure {
   final StackTrace? stackTrace;
 }
 
+/// A lock-data reset was attempted without the caller confirming it.
+final class AppLockResetNotConfirmed extends AppLockFailure {
+  const AppLockResetNotConfirmed();
+}
+
 /// Bridges [AppLockFailure] into the frozen `Future<void>` controller API,
 /// which has no `Result` channel. Feature code that can show an error should
 /// call the `Result`-returning methods on `AppLockService` instead.

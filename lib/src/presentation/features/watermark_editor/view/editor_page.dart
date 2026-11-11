@@ -74,12 +74,15 @@ class _EditorPageState extends ConsumerState<EditorPage> {
       session.controller.addListener(_onDraftChanged);
     }
 
-    // The preset handoff is a one-shot: consume it once the draft is open.
+    // The hand-offs are one-shot: consume them once the draft is open.
     // The clear waits for a frame so no provider is written during build.
-    if (!_pendingCleared && session.appliedPresetId != null) {
+    if (!_pendingCleared &&
+        (session.appliedPresetId != null || session.appliedPendingConfig)) {
       _pendingCleared = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) clearPendingPresetId(ref);
+        if (!mounted) return;
+        clearPendingPresetId(ref);
+        clearPendingWatermarkConfig(ref);
       });
     }
 
@@ -255,6 +258,20 @@ class _EditorScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          tooltip: context.locale.common_back,
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            final navigator = Navigator.of(context);
+            if (navigator.canPop()) {
+              navigator.pop();
+            } else {
+              // A deep link can open the editor as the only page; never
+              // leave the user without a way back to the shell.
+              context.goNamed(Routes.home.name);
+            }
+          },
+        ),
         title: HeadingLevel3Text(title),
         actions: actions,
       ),

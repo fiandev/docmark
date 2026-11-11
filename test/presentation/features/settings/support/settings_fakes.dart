@@ -1,15 +1,16 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:flutter_template/src/core/base/base.dart';
-import 'package:flutter_template/src/core/security/lock/app_lock_failure.dart';
-import 'package:flutter_template/src/core/security/lock/app_lock_service.dart';
-import 'package:flutter_template/src/core/security/lock/lock_state.dart';
-import 'package:flutter_template/src/core/security/lock_controller.dart';
-import 'package:flutter_template/src/core/security/secure_file_vault.dart';
-import 'package:flutter_template/src/domain/entities/history.dart';
-import 'package:flutter_template/src/domain/failures/business_failure.dart';
-import 'package:flutter_template/src/domain/repositories/history_repository.dart';
+import 'package:docmark/src/core/base/base.dart';
+import 'package:docmark/src/core/security/lock/app_lock_failure.dart';
+import 'package:docmark/src/core/security/lock/app_lock_service.dart';
+import 'package:docmark/src/core/security/lock/lock_state.dart';
+import 'package:docmark/src/core/security/lock_controller.dart';
+import 'package:docmark/src/core/security/secure_file_vault.dart';
+import 'package:docmark/src/core/storage/app_data_wipe.dart';
+import 'package:docmark/src/domain/entities/history.dart';
+import 'package:docmark/src/domain/failures/business_failure.dart';
+import 'package:docmark/src/domain/repositories/history_repository.dart';
 
 /// An in-memory [AppLockService] that records every settings-triggered call.
 final class FakeAppLockService implements AppLockService {
@@ -43,6 +44,7 @@ final class FakeAppLockService implements AppLockService {
   int disableCalls = 0;
   int changePinCalls = 0;
   int updateSettingsCalls = 0;
+  int resetCalls = 0;
   Duration? lastGrace;
   AppLockFailure? failNext;
 
@@ -174,6 +176,24 @@ final class FakeAppLockService implements AppLockService {
   }
 
   @override
+  Future<Result<Unit, AppLockFailure>> resetLockData({
+    bool confirmed = false,
+  }) async {
+    if (!confirmed) return const Error(AppLockResetNotConfirmed());
+
+    resetCalls += 1;
+    pin = null;
+    _emit(const AppLockState(
+      status: LockStatus.disabled,
+      secret: null,
+      failedAttempts: 0,
+      lockedUntil: null,
+    ));
+
+    return const Success(Unit.value);
+  }
+
+  @override
   Future<Result<Unit, AppLockFailure>> updateSettings({
     LockPolicy? policy,
     bool? biometricsEnabled,
@@ -186,6 +206,17 @@ final class FakeAppLockService implements AppLockService {
       final secret = _state.secret;
       if (secret != null) {
         _emit(_state.copyWith(secret: secret.copyWith(policy: policy)));
+      }
+    }
+
+    if (biometricsEnabled != null) {
+      final secret = _state.secret;
+      if (secret != null) {
+        _emit(
+          _state.copyWith(
+            secret: secret.copyWith(biometricsEnabled: biometricsEnabled),
+          ),
+        );
       }
     }
 
@@ -218,6 +249,22 @@ final class FakeAppLockService implements AppLockService {
   void _emit(AppLockState next) {
     _state = next;
     _changes.add(next);
+  }
+}
+
+/// An in-memory [AppDataWipe] that records the destructive call.
+final class FakeAppDataWipe implements AppDataWipe {
+  FakeAppDataWipe({this.onWipe});
+
+  final void Function()? onWipe;
+  int wipeCalls = 0;
+  bool fail = false;
+
+  @override
+  Future<void> wipeAll() async {
+    wipeCalls += 1;
+    if (fail) throw StateError('wipe failed');
+    onWipe?.call();
   }
 }
 

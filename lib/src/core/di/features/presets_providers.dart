@@ -2,9 +2,12 @@
 ///
 /// Frozen DI contract for the preset store, the preset list every preset
 /// surface watches, and the hand-off used by "apply preset". T3 reads
-/// [presetListProvider] and [pendingPresetIdProvider]; the picker clears the
-/// pending id once it has handed the elements to the editor.
+/// [presetListProvider] and [pendingPresetIdProvider]; the picker keeps the
+/// pending id for the editor on success and clears it when a pick is
+/// abandoned, while the editor clears it after applying.
 library;
+
+import 'dart:async';
 
 import 'package:flutter/material.dart' show BuildContext;
 import 'package:flutter_riverpod/flutter_riverpod.dart' show WidgetRef;
@@ -111,10 +114,11 @@ class PendingPresetId extends _$PendingPresetId {
 
 /// Starts the "apply preset" flow.
 ///
-/// Records [presetId] first, then leaves the tab shell for the picker. The
+/// Records [presetId] first, then pushes the picker above the shell. The
 /// order matters: the picker's builder must never see a half-applied choice.
+/// Pushing (not replacing) keeps a back destination for a cancelled pick.
 /// Routing goes through [Routes] so no feature imports the import feature.
 void applyPreset(WidgetRef ref, BuildContext context, String presetId) {
   ref.read(pendingPresetIdProvider.notifier).set(presetId);
-  context.goNamed(Routes.documentPicker.name);
+  unawaited(context.pushNamed(Routes.documentPicker.name));
 }

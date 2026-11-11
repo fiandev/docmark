@@ -279,7 +279,8 @@ class _PageBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.locale;
-    final page = controller.pageIndex;
+    final sources = controller.pageSourceIndices;
+    final position = sources.indexOf(controller.pageIndex);
 
     return Padding(
       padding: EdgeInsets.symmetric(
@@ -290,21 +291,21 @@ class _PageBar extends StatelessWidget {
         children: [
           IconButton(
             tooltip: l10n.common_back,
-            onPressed: page <= 0
+            onPressed: position <= 0
                 ? null
-                : () => controller.setPage(page - 1),
+                : () => controller.setPage(sources[position - 1]),
             icon: const Icon(Icons.chevron_left),
           ),
           Gap(context.dimensions.space.s8),
           BodySmallText(
-            l10n.editor_page(page + 1, controller.pageCount),
+            l10n.editor_page(position + 1, sources.length),
           ),
           Gap(context.dimensions.space.s8),
           IconButton(
             tooltip: l10n.common_next,
-            onPressed: page >= controller.pageCount - 1
+            onPressed: position >= sources.length - 1
                 ? null
-                : () => controller.setPage(page + 1),
+                : () => controller.setPage(sources[position + 1]),
             icon: const Icon(Icons.chevron_right),
           ),
         ],

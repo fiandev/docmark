@@ -7,6 +7,7 @@ import '../../../../core/extensions/localization.dart';
 import '../../../../domain/entities/history.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/text/typography.dart';
+import 'history_preview_dialog.dart' show looksLikePdf;
 import 'history_status_chip.dart';
 
 /// One row's action callback.
@@ -195,9 +196,14 @@ class _HistoryThumbnail extends ConsumerWidget {
         height: size,
         child: switch (preview) {
           AsyncData(:final value) =>
-            value == null || value.isEmpty
+            value == null || value.isEmpty || looksLikePdf(value)
                 ? const _ThumbnailPlaceholder()
-                : Image.memory(value, fit: BoxFit.cover),
+                : Image.memory(
+                    value,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const _ThumbnailPlaceholder(),
+                  ),
           _ => const _ThumbnailPlaceholder(),
         },
       ),

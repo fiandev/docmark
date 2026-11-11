@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:flutter_template/src/core/security/key_manager_impl.dart';
-import 'package:flutter_template/src/core/security/src/secure_key_value_store.dart';
+import 'package:docmark/src/core/security/key_manager_impl.dart';
+import 'package:docmark/src/core/security/src/secure_key_value_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
