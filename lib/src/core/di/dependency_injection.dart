@@ -1,0 +1,34 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:pretty_dio_logger/pretty_dio_logger.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../core/base/crash_reporter.dart';
+import '../../data/repositories/authentication_repository_impl.dart';
+import '../../data/repositories/locale_repository_impl.dart';
+import '../../data/repositories/router_repository_impl.dart';
+import '../../data/services/cache/cache_service.dart';
+import '../../data/services/cache/shared_preferences_service.dart';
+import '../../data/services/network/auth/secure_token_store.dart';
+import '../../data/services/network/auth/token_manager.dart';
+import '../../data/services/network/auth/token_store.dart';
+import '../../data/services/network/config/network_config.dart';
+import '../../data/services/network/config/server_error_parser.dart';
+import '../../data/services/network/endpoints.dart';
+import '../../data/services/network/rest_client.dart';
+import '../../data/services/network/transport/dio_builder.dart';
+import '../../data/services/network/transport/interceptors/debug_logger_interceptor.dart';
+import '../../domain/repositories/authentication_repository.dart';
+import '../../domain/repositories/locale_repository.dart';
+import '../../domain/repositories/router_repository.dart';
+import '../../domain/use_cases/authentication_use_case.dart';
+import '../../domain/use_cases/locale_use_case.dart';
+import '../../domain/use_cases/reset_repository_use_case.dart';
+import '../../domain/use_cases/router_use_case.dart';
+
+part 'dependency_injection.g.dart';
+part 'parts/externals.dart';
+part 'parts/repository.dart';
+part 'parts/services.dart';
+part 'parts/use_cases.dart';

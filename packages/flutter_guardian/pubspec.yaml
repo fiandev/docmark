@@ -1,0 +1,24 @@
+name: flutter_guardian
+description: >-
+  Naming-convention rules for the template's dependency-injection layers,
+  as a native Dart analyzer plugin.
+version: 0.1.0
+publish_to: none
+
+# WHY: a native analyzer plugin runs inside the analysis server, which
+# resolves this package in its own context — it must stay pure Dart (no
+# Flutter SDK dependency). The analyzer lower bound is the version that
+# introduced the NamedArgument / argumentExpression AST API the rules
+# use; the upper bound stays open within the major so the server can
+# select the version matching its own protocol.
+environment:
+  sdk: ^3.10.0
+
+dependencies:
+  analysis_server_plugin: ^0.3.0
+  analyzer: ">=14.0.0 <15.0.0"
+
+dev_dependencies:
+  analyzer_testing: ^0.3.4
+  lints: ^6.0.0
+  test: ^1.31.2

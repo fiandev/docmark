@@ -1,0 +1,94 @@
+name: flutter_template
+description: "A new Flutter project."
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+# The following defines the version and build number for your application.
+# A version number is three numbers separated by dots, like 1.2.43
+# followed by an optional build number separated by a +.
+# Both the version and the builder number may be overridden in flutter
+# build by specifying --build-name and --build-number, respectively.
+# In Android, build-name is used as versionName while build-number used as versionCode.
+# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
+# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
+# Read more about iOS versioning at
+# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
+# In Windows, build-name is used as the major, minor, and patch parts
+# of the product and file versions while build-number is used as the build suffix.
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.0
+
+# Dependencies specify other packages that your package needs in order to work.
+# To automatically upgrade your package dependencies to the latest versions
+# consider running `flutter pub upgrade --major-versions`. Alternatively,
+# dependencies can be manually updated by changing the version numbers below to
+# the latest version available on pub.dev. To see which dependencies have newer
+# versions available, run `flutter pub outdated`.
+dependencies:
+  flutter:
+    sdk: flutter
+  # UI
+  cupertino_icons: ^1.0.9
+  gap: ^3.0.1
+  # State management
+  flutter_riverpod: ^3.3.2
+  # Navigation
+  go_router: ^17.4.0
+  # Cache & Database
+  shared_preferences: ^2.5.5
+  flutter_secure_storage: ^11.0.0
+  # Generator and Annotations
+  riverpod_annotation: ^4.0.3
+  freezed_annotation: ^3.1.0
+  # Media
+  flutter_svg: ^2.3.0
+  # Logging
+  logger: ^2.7.0
+  pretty_dio_logger: ^1.4.0
+  # Serialization & Deserialization
+  dart_mappable: ^4.8.0
+  # Networking
+  retrofit: ^4.9.2
+  dio: ^5.11.0
+  # Localization
+  intl: ^0.20.2
+  flutter_localizations:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+  build_runner: ^2.15.1
+  riverpod_generator: ^4.0.4
+  flutter_gen_runner: ^5.15.0
+  dart_mappable_builder: ^4.9.0
+  retrofit_generator: ^10.2.8
+  # WHY: freezed 3 emits `final` on a generated constructor parameter, which
+  # Dart 3.13 rejects — the 4.0.0-dev line is the first that stops emitting it,
+  # so the pre-release pin is what makes the app compile at all. It carries the
+  # codegen chain to analyzer 13, which is why dart_mappable_builder is on 4.9.
+  # Move to a plain caret when freezed 4 ships stable.
+  freezed: ^4.0.0-dev.3
+  # Testing
+  http_mock_adapter: ^0.6.1
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+
+
+flutter_gen:
+  output: lib/src/presentation/core/gen
+  line_length: 80
+
+  integrations:
+    flutter_svg: true
