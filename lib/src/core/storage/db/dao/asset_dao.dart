@@ -92,6 +92,15 @@ final class AssetDao {
         .go();
   }
 
+  /// True while any preset or link-table owner points at [assetId]. This
+  /// deliberately ignores [DocumentAssets] rows, so a document can ask
+  /// whether its own source blob is also someone else's asset.
+  Future<bool> hasOwnerLink(String assetId) async {
+    if (await _hasPresetLink(assetId)) return true;
+
+    return _hasAssetLink(assetId);
+  }
+
   Future<bool> _hasPresetLink(String assetId) async {
     final rows = await (_db.select(_db.presetAssets)
           ..where((table) => table.assetId.equals(assetId))

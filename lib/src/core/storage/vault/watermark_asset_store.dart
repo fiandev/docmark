@@ -87,6 +87,11 @@ final class WatermarkAssetStore {
     await _assets.remove(reference.id);
   }
 
+  /// Whether a preset or a link-table owner (a document config or a
+  /// history run) references [assetId]. Used to avoid deleting a source
+  /// blob that somebody else also points at.
+  Future<bool> isShared(String assetId) => _assets.hasOwnerLink(assetId);
+
   Future<List<String>> linkedAssetIds({
     required String ownerType,
     required String ownerId,

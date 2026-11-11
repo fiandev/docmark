@@ -204,7 +204,7 @@ final class DocumentRepositoryImpl extends Repository
           ownerId: documentId,
         );
 
-        if (source != null) {
+        if (source != null && !await _images.isShared(source.assetId)) {
           await _vault.delete(
             AssetRef(id: source.assetId, relativePath: source.blobPath),
           );
