@@ -4,20 +4,25 @@ import 'package:gap/gap.dart';
 import '../../../../core/extensions/localization.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/text/typography.dart';
+import '../widgets/app_lock_section.dart';
+import '../widgets/privacy_section.dart';
+import '../widgets/storage_section.dart';
 
-/// Settings: security, storage, privacy.
+/// Settings: security, storage, and privacy.
 ///
-/// OWNER: T10 (App Lock settings) and T6 (storage/history). The page is a
-/// stub until the settings stores land; it renders no destructive action
-/// without the real confirmation flow.
+/// Every action goes through a core DI provider — the page imports no other
+/// feature. Lock changes never navigate: the router gate reacts to the
+/// service's own status stream.
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.locale;
+
     return Scaffold(
       appBar: AppBar(
-        title: HeadingLevel3Text(context.locale.settings_title),
+        title: HeadingLevel3Text(l10n.settings_title),
       ),
       body: SafeArea(
         child: ListView(
@@ -25,33 +30,22 @@ class SettingsPage extends StatelessWidget {
             vertical: context.dimensions.space.s8,
           ),
           children: [
-            _SettingsTile(
-              icon: Icons.lock_outline,
-              title: context.locale.settings_appLock,
-              subtitle: context.locale.settings_appLockBody,
-            ),
-            _SettingsTile(
-              icon: Icons.storage_outlined,
-              title: context.locale.settings_storage,
-              subtitle: context.locale.settings_storageBody,
-            ),
-            _SettingsTile(
-              icon: Icons.delete_outline,
-              title: context.locale.settings_clearHistory,
-              subtitle: context.locale.settings_clearHistoryBody,
-            ),
-            _SettingsTile(
-              icon: Icons.privacy_tip_outlined,
-              title: context.locale.settings_privacy,
-              subtitle: context.locale.settings_privacyBody,
-            ),
+            _SectionHeader(l10n.settings_security),
+            const AppLockSection(),
+            Gap(context.dimensions.space.s24),
+            _SectionHeader(l10n.settings_storage),
+            const StorageSection(),
+            Gap(context.dimensions.space.s24),
+            _SectionHeader(l10n.settings_privacy),
+            const PrivacySection(),
             Gap(context.dimensions.space.s16),
             Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: context.dimensions.space.s16,
               ),
-              child: BodySmallText.muted(context.locale.settings_version),
+              child: BodySmallText.muted(l10n.settings_version),
             ),
+            Gap(context.dimensions.space.s24),
           ],
         ),
       ),
@@ -59,23 +53,21 @@ class SettingsPage extends StatelessWidget {
   }
 }
 
-class _SettingsTile extends StatelessWidget {
-  const _SettingsTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader(this.title);
 
-  final IconData icon;
   final String title;
-  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon, color: context.color.text.muted),
-      title: LabelText(title),
-      subtitle: BodySmallText.muted(subtitle),
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        context.dimensions.space.s16,
+        context.dimensions.space.s8,
+        context.dimensions.space.s16,
+        context.dimensions.space.s8,
+      ),
+      child: HeadingLevel3Text(title),
     );
   }
 }
