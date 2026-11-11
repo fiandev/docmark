@@ -401,6 +401,21 @@
             }
         }
     },
+    "home_newWatermarkBody": "Import a document and add your watermarks.",
+    "home_viewAll": "View all",
+    "home_presetsBody": "Reuse a saved watermark setup.",
+    "home_settingsBody": "App Lock, storage and privacy.",
+    "settings_changePin": "Change PIN",
+    "settings_lockAfter": "Lock after leaving the app",
+    "settings_graceImmediately": "Immediately",
+    "settings_graceSeconds": "{seconds} seconds",
+    "@settings_graceSeconds": {
+        "placeholders": {
+            "seconds": {
+                "type": "int"
+            }
+        }
+    },
     "editor_pageOnly": "Only this page",
     "editor_image": "Image",
     "editor_lockAspect": "Lock aspect ratio",
@@ -416,5 +431,86 @@
     "history_importDocument": "Import document",
     "history_deleteFailed": "The entry could not be deleted.",
     "history_clearFailed": "History could not be cleared.",
-    "history_cleared": "History cleared."
+    "history_cleared": "History cleared.",
+    "settings_graceMinute": "1 minute",
+    "settings_graceMinutes": "{minutes} minutes",
+    "@settings_graceMinutes": {
+        "placeholders": {
+            "minutes": {
+                "type": "int"
+            }
+        }
+    },
+    "settings_pinLabel": "PIN",
+    "settings_pinDigits": "{count} digits",
+    "@settings_pinDigits": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "settings_pinLengthError": "The PIN must be {count} digits.",
+    "@settings_pinLengthError": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "settings_pinMismatch": "The PINs do not match.",
+    "settings_pinInvalid": "That PIN is not correct.",
+    "settings_pinRequired": "Enter a PIN first.",
+    "settings_tooManyAttempts": "Too many attempts. Try again in {seconds} seconds.",
+    "@settings_tooManyAttempts": {
+        "placeholders": {
+            "seconds": {
+                "type": "int"
+            }
+        }
+    },
+    "settings_failure": "Something went wrong. Try again.",
+    "settings_enableLockTitle": "Set an App Lock PIN",
+    "settings_enableLockBody": "Choose a {count}-digit PIN. You will enter it every time DocMark opens.",
+    "@settings_enableLockBody": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "settings_verifyPinTitle": "Enter your PIN",
+    "settings_verifyPinBody": "Confirm your PIN to continue.",
+    "settings_disableLockTitle": "Turn off App Lock",
+    "settings_disableLockBody": "Enter your current PIN to remove the lock.",
+    "settings_changePinTitle": "Choose a new PIN",
+    "settings_changePinBody": "Enter the PIN you want to use next.",
+    "settings_appLockEnabled": "App Lock is on.",
+    "settings_appLockDisabled": "App Lock is off.",
+    "settings_pinChanged": "PIN changed.",
+    "settings_storageDocuments": "{count} documents",
+    "@settings_storageDocuments": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "settings_storageHistory": "{count} history entries",
+    "@settings_storageHistory": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "settings_storageEmpty": "Nothing is stored yet.",
+    "settings_historyCleared": "Processing history cleared.",
+    "settings_deleteAll": "Delete all app data",
+    "settings_deleteAllBody": "Remove every encrypted document, preset and history entry from this device.",
+    "settings_deleteAllConfirm": "Delete all app data? This cannot be undone.",
+    "settings_allDataDeleted": "All app data deleted.",
+    "settings_privacyLocal": "Every watermark is added on this device. Nothing is uploaded.",
+    "settings_privacyEncrypted": "Documents, presets and previews stay encrypted at rest in DocMark's private storage.",
+    "settings_privacyExport": "Exported files leave DocMark's protection. Share them only with people you trust."
 }
