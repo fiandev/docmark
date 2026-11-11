@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
-import 'package:flutter_template/src/domain/entities/image_format.dart';
-import 'package:flutter_template/src/domain/services/format_probe.dart';
-import 'package:flutter_template/src/domain/services/media_normalizer.dart';
+import 'package:docmark/src/domain/entities/image_format.dart';
+import 'package:docmark/src/domain/services/format_probe.dart';
+import 'package:docmark/src/domain/services/media_normalizer.dart';
 
 /// [MediaNormalizerService] that trusts the probe and copies bytes through
 /// as "PNG". Tests that need real decoding use the platform `image`

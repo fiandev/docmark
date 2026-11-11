@@ -1,11 +1,16 @@
-import 'package:flutter_template/src/core/base/result.dart';
-import 'package:flutter_template/src/core/base/unit.dart';
-import 'package:flutter_template/src/core/security/secure_file_vault.dart';
-import 'package:flutter_template/src/domain/entities/normalized_rect.dart';
-import 'package:flutter_template/src/domain/entities/preset.dart';
-import 'package:flutter_template/src/domain/entities/watermark_element.dart';
-import 'package:flutter_template/src/domain/failures/business_failure.dart';
-import 'package:flutter_template/src/domain/repositories/document_repository.dart';
+import 'dart:typed_data';
+
+import 'package:docmark/src/core/base/result.dart';
+import 'package:docmark/src/core/base/unit.dart';
+import 'package:docmark/src/core/security/secure_file_vault.dart';
+import 'package:docmark/src/core/storage/db/dao/asset_dao.dart';
+import 'package:docmark/src/core/storage/vault/watermark_asset_store.dart';
+import 'package:docmark/src/data/repositories/preset_repository_impl.dart';
+import 'package:docmark/src/domain/entities/normalized_rect.dart';
+import 'package:docmark/src/domain/entities/preset.dart';
+import 'package:docmark/src/domain/entities/watermark_element.dart';
+import 'package:docmark/src/domain/failures/business_failure.dart';
+import 'package:docmark/src/domain/repositories/document_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'harness.dart';
@@ -95,6 +100,43 @@ void main() {
       );
     });
 
+    test(
+      'delete commits the preset before the blob delete can fail',
+      () async {
+        final source = await _seedImage(harness, 'brand-logo');
+        final preset = dataOf(
+          await harness.presets().create(
+            name: 'Brand',
+            elements: [_imageElement(source.id)],
+            imageAssetIds: [source.id],
+          ),
+        );
+        final repository = PresetRepositoryImpl(
+          crashReporter: harness.crashReporter,
+          database: harness.database,
+          images: WatermarkAssetStore(
+            vault: _VaultWithFailingDelete(harness.vault),
+            assets: AssetDao(harness.database),
+          ),
+        );
+        final copiedId = preset.imageAssetIds.single;
+
+        final result = await repository.delete(preset.id);
+
+        expect(result, isA<Error<Unit, BusinessFailure>>());
+        expect(
+          await harness.database.select(harness.database.presets).get(),
+          isEmpty,
+        );
+        expect(
+          await harness.database.select(harness.database.presetAssets).get(),
+          isEmpty,
+        );
+        // The asset row and blob survive; only the preset rows committed.
+        expect(await harness.images.refFor(copiedId), isNotNull);
+      },
+    );
+
     test('delete removes the preset and its copied asset', () async {
       final repository = harness.presets();
       final source = await _seedImage(harness, 'brand-logo');
@@ -173,4 +215,35 @@ ImageWatermark _imageElement(String assetId) {
     rect: const NormalizedRect.fromLTWH(0.1, 0.1, 0.2, 0.2),
     assetId: assetId,
   );
+}
+
+/// Delegates reads and writes but refuses to delete, so the ordering test can
+/// let the row transaction commit and fail at the blob step.
+final class _VaultWithFailingDelete implements SecureFileVault {
+  _VaultWithFailingDelete(this._inner);
+
+  final SecureFileVault _inner;
+
+  @override
+  Future<AssetRef> put({
+    required Uint8List bytes,
+    required String extension,
+    String? assetId,
+  }) => _inner.put(bytes: bytes, extension: extension, assetId: assetId);
+
+  @override
+  Future<Uint8List> read(AssetRef ref) => _inner.read(ref);
+
+  @override
+  Future<bool> exists(AssetRef ref) => _inner.exists(ref);
+
+  @override
+  Future<void> delete(AssetRef ref) async => throw _VaultLocked();
+
+  @override
+  Future<void> deleteAll() => _inner.deleteAll();
+}
+
+final class _VaultLocked implements Exception {
+  const _VaultLocked();
 }

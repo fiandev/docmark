@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 
-import 'package:flutter_template/src/core/base/result.dart';
-import 'package:flutter_template/src/core/base/unit.dart';
-import 'package:flutter_template/src/domain/entities/document.dart';
-import 'package:flutter_template/src/domain/failures/business_failure.dart';
-import 'package:flutter_template/src/domain/repositories/document_repository.dart';
+import 'package:docmark/src/core/base/result.dart';
+import 'package:docmark/src/core/base/unit.dart';
+import 'package:docmark/src/domain/entities/document.dart';
+import 'package:docmark/src/domain/failures/business_failure.dart';
+import 'package:docmark/src/domain/repositories/document_repository.dart';
 
 /// Document lookup seam for the history page's reuse path.
 final class FakeDocumentRepository implements DocumentRepository {

@@ -147,18 +147,28 @@ final class ExportController {
   }
 
   /// Hands every file in [bundle] to the platform share sheet.
+  ///
+  /// The staged files are plaintext, so they are deleted once the sheet
+  /// returns — success or failure. The `finally` is what guarantees the
+  /// copy does not outlive the share.
   Future<void> share(ExportBundle bundle, {required String subject}) async {
     final paths = <String>[];
-    for (final file in bundle.files) {
-      paths.add(
-        await _fileWriter.writeTempFile(
-          bytes: file.result.bytes,
-          fileName: file.fileName,
-        ),
-      );
-    }
+    try {
+      for (final file in bundle.files) {
+        paths.add(
+          await _fileWriter.writeTempFile(
+            bytes: file.result.bytes,
+            fileName: file.fileName,
+          ),
+        );
+      }
 
-    await _fileWriter.shareFiles(paths: paths, subject: subject);
+      await _fileWriter.shareFiles(paths: paths, subject: subject);
+    } finally {
+      for (final path in paths) {
+        await _fileWriter.deleteTempFile(path);
+      }
+    }
   }
 
   Future<List<ExportedFile>> _renderBundlePdf(

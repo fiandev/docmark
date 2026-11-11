@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter_template/src/core/security/key_manager_impl.dart';
-import 'package:flutter_template/src/core/security/src/aes_gcm_encryption_service.dart';
-import 'package:flutter_template/src/core/security/src/secure_key_value_store.dart';
-import 'package:flutter_template/src/core/storage/db/app_database.dart';
-import 'package:flutter_template/src/core/storage/db/database_key_store.dart';
+import 'package:docmark/src/core/security/key_manager_impl.dart';
+import 'package:docmark/src/core/security/src/aes_gcm_encryption_service.dart';
+import 'package:docmark/src/core/security/src/secure_key_value_store.dart';
+import 'package:docmark/src/core/storage/db/app_database.dart';
+import 'package:docmark/src/core/storage/db/database_key_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 

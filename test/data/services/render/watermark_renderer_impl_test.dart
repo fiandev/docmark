@@ -5,14 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 
-import 'package:flutter_template/src/data/services/render/pdf_composer.dart';
-import 'package:flutter_template/src/data/services/render/pdf_page_rasterizer.dart';
-import 'package:flutter_template/src/data/services/render/watermark_renderer_impl.dart';
-import 'package:flutter_template/src/domain/entities/document.dart';
-import 'package:flutter_template/src/domain/entities/image_format.dart';
-import 'package:flutter_template/src/domain/entities/normalized_rect.dart';
-import 'package:flutter_template/src/domain/entities/watermark_element.dart';
-import 'package:flutter_template/src/domain/services/render_contract.dart';
+import 'package:docmark/src/data/services/render/pdf_composer.dart';
+import 'package:docmark/src/data/services/render/pdf_page_rasterizer.dart';
+import 'package:docmark/src/data/services/render/watermark_renderer_impl.dart';
+import 'package:docmark/src/domain/entities/document.dart';
+import 'package:docmark/src/domain/entities/image_format.dart';
+import 'package:docmark/src/domain/entities/normalized_rect.dart';
+import 'package:docmark/src/domain/entities/watermark_element.dart';
+import 'package:docmark/src/domain/services/render_contract.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

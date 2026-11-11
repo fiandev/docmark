@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_template/src/presentation/core/theme/theme.dart';
-import 'package:flutter_template/src/presentation/features/app_lock/widgets/pin_dots.dart';
-import 'package:flutter_template/src/presentation/features/app_lock/widgets/pin_pad.dart';
+import 'package:docmark/src/presentation/core/theme/theme.dart';
+import 'package:docmark/src/presentation/features/app_lock/widgets/pin_dots.dart';
+import 'package:docmark/src/presentation/features/app_lock/widgets/pin_pad.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -1,15 +1,15 @@
 import 'dart:typed_data';
 
-import 'package:flutter_template/src/core/base/result.dart';
-import 'package:flutter_template/src/core/base/unit.dart';
-import 'package:flutter_template/src/data/services/media/document_pick_service.dart';
-import 'package:flutter_template/src/data/services/media/pdf_page_preview_service.dart';
-import 'package:flutter_template/src/domain/entities/document.dart';
-import 'package:flutter_template/src/domain/entities/image_format.dart';
-import 'package:flutter_template/src/domain/failures/business_failure.dart';
-import 'package:flutter_template/src/domain/repositories/document_repository.dart';
-import 'package:flutter_template/src/domain/services/format_probe.dart';
-import 'package:flutter_template/src/domain/services/media_normalizer.dart';
+import 'package:docmark/src/core/base/result.dart';
+import 'package:docmark/src/core/base/unit.dart';
+import 'package:docmark/src/data/services/media/document_pick_service.dart';
+import 'package:docmark/src/data/services/media/pdf_page_preview_service.dart';
+import 'package:docmark/src/domain/entities/document.dart';
+import 'package:docmark/src/domain/entities/image_format.dart';
+import 'package:docmark/src/domain/failures/business_failure.dart';
+import 'package:docmark/src/domain/repositories/document_repository.dart';
+import 'package:docmark/src/domain/services/format_probe.dart';
+import 'package:docmark/src/domain/services/media_normalizer.dart';
 
 final class FakeDocumentPickService implements DocumentPickService {
   FakeDocumentPickService({this.gallery, this.files});

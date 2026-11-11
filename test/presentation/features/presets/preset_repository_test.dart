@@ -1,8 +1,8 @@
-import 'package:flutter_template/src/core/security/secure_file_vault.dart';
-import 'package:flutter_template/src/data/mappers/docmark_mappers.dart';
-import 'package:flutter_template/src/domain/entities/image_format.dart';
-import 'package:flutter_template/src/domain/entities/normalized_rect.dart';
-import 'package:flutter_template/src/domain/entities/watermark_element.dart';
+import 'package:docmark/src/core/security/secure_file_vault.dart';
+import 'package:docmark/src/data/mappers/docmark_mappers.dart';
+import 'package:docmark/src/domain/entities/image_format.dart';
+import 'package:docmark/src/domain/entities/normalized_rect.dart';
+import 'package:docmark/src/domain/entities/watermark_element.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../data/repositories/docmark/harness.dart';

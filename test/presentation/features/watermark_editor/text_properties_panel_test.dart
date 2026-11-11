@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_template/src/core/gen/l10n/app_localizations.dart';
-import 'package:flutter_template/src/domain/entities/document.dart';
-import 'package:flutter_template/src/domain/entities/image_format.dart';
-import 'package:flutter_template/src/domain/entities/watermark_element.dart';
-import 'package:flutter_template/src/presentation/core/theme/theme.dart';
-import 'package:flutter_template/src/presentation/features/watermark_editor/controller/editor_controller.dart';
-import 'package:flutter_template/src/presentation/features/watermark_editor/widgets/color_picker_sheet.dart';
-import 'package:flutter_template/src/presentation/features/watermark_editor/widgets/text_properties_panel.dart';
+import 'package:docmark/src/core/gen/l10n/app_localizations.dart';
+import 'package:docmark/src/domain/entities/document.dart';
+import 'package:docmark/src/domain/entities/image_format.dart';
+import 'package:docmark/src/domain/entities/watermark_element.dart';
+import 'package:docmark/src/presentation/core/theme/theme.dart';
+import 'package:docmark/src/presentation/features/watermark_editor/controller/editor_controller.dart';
+import 'package:docmark/src/presentation/features/watermark_editor/widgets/color_picker_sheet.dart';
+import 'package:docmark/src/presentation/features/watermark_editor/widgets/text_properties_panel.dart';
 
 import 'support/editor_fakes.dart';
 

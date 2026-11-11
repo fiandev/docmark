@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 import 'dart:ui' show Size;
 
-import 'package:flutter_template/src/domain/entities/image_format.dart';
-import 'package:flutter_template/src/domain/services/render_contract.dart';
+import 'package:docmark/src/domain/entities/image_format.dart';
+import 'package:docmark/src/domain/services/render_contract.dart';
 
 /// [WatermarkRenderer] that returns deterministic 1x1 output and records
 /// every call. Useful for pages that only need the renderer to exist.

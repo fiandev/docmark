@@ -23,8 +23,13 @@ import 'pin_verifier.dart';
 ///   path from process start to the document tree that skips the gate.
 /// - The status starts locked before storage answers (fail closed) and only
 ///   settles on disabled when storage confirms there is no blob.
+/// - A failed state read is not cached: initialize() retries on the next
+///   call, so a transient keystore failure cannot pin the lock screen until
+///   the process is killed.
 /// - Misses double the cooldown from one second after the policy's
 ///   `maxPinAttempts`; during a cooldown neither PIN nor biometrics unlock.
+///   The counter and deadline are persisted in the blob, so a restart keeps
+///   the backoff instead of granting a fresh budget.
 final class LockControllerImpl implements AppLockService {
   LockControllerImpl({
     required KeyManager keyManager,
@@ -74,7 +79,15 @@ final class LockControllerImpl implements AppLockService {
   }
 
   @override
-  Future<void> initialize() => _initialization ??= _load();
+  Future<void> initialize() {
+    final pending = _initialization;
+    if (pending != null) return pending;
+
+    final loading = _load();
+    _initialization = loading;
+
+    return loading;
+  }
 
   Future<void> _load() async {
     try {
@@ -96,14 +109,18 @@ final class LockControllerImpl implements AppLockService {
         _state.copyWith(
           status: LockStatus.locked,
           secret: normalized,
-          failedAttempts: 0,
-          clearLockedUntil: true,
+          failedAttempts: normalized.failedAttempts,
+          lockedUntil: normalized.lockedUntil,
+          clearLockedUntil: normalized.lockedUntil == null,
         ),
       );
     } catch (error) {
       // Fail closed: an unreadable blob must never open the app. Only the
       // error type is logged — the blob and key material stay out of logs.
       Log.error('App Lock: state could not be read (${error.runtimeType})');
+      // Do not cache the failed attempt: the keystore may simply be busy.
+      // A later initialize() (router retry, settings open) tries again.
+      _initialization = null;
       _emit(_state.copyWith(status: LockStatus.locked));
     }
   }
@@ -203,23 +220,29 @@ final class LockControllerImpl implements AppLockService {
     }
 
     if (!_isWellFormed(pin, secret.policy.pinLength)) {
-      return Error(_recordMiss(secret));
+      return Error(await _recordMiss(secret));
     }
 
     final verifier = PinVerifier(iterations: secret.iterations);
     final candidate = await verifier.derive(pin, secret.salt);
 
     if (!PinVerifier.constantTimeEquals(candidate, secret.verifier)) {
-      return Error(_recordMiss(secret));
+      return Error(await _recordMiss(secret));
     }
 
+    final cleared = secret.copyWith(
+      failedAttempts: 0,
+      clearLockedUntil: true,
+    );
     _emit(
       _state.copyWith(
         status: LockStatus.unlocked,
+        secret: cleared,
         failedAttempts: 0,
         clearLockedUntil: true,
       ),
     );
+    await _persistSecret(cleared);
 
     return const Success(true);
   }
@@ -256,13 +279,19 @@ final class LockControllerImpl implements AppLockService {
       _promptInFlight = false;
     }
 
+    final cleared = secret.copyWith(
+      failedAttempts: 0,
+      clearLockedUntil: true,
+    );
     _emit(
       _state.copyWith(
         status: LockStatus.unlocked,
+        secret: cleared,
         failedAttempts: 0,
         clearLockedUntil: true,
       ),
     );
+    await _persistSecret(cleared);
 
     return const Success(true);
   }
@@ -289,7 +318,7 @@ final class LockControllerImpl implements AppLockService {
     }
 
     if (!await _matches(secret, currentPin)) {
-      return Error(_recordMiss(secret));
+      return Error(await _recordMiss(secret));
     }
 
     final salt = _pinVerifier.newSalt();
@@ -318,7 +347,7 @@ final class LockControllerImpl implements AppLockService {
     }
 
     if (!await _matches(secret, pin)) {
-      return Error(_recordMiss(secret));
+      return Error(await _recordMiss(secret));
     }
 
     try {
@@ -333,6 +362,35 @@ final class LockControllerImpl implements AppLockService {
         clearSecret: true,
         failedAttempts: 0,
         clearLockedUntil: true,
+      ),
+    );
+
+    return const Success(Unit.value);
+  }
+
+  @override
+  Future<Result<Unit, AppLockFailure>> resetLockData({
+    bool confirmed = false,
+  }) async {
+    // Deliberately explicit: a caller cannot wipe the lock by accident.
+    if (!confirmed) return const Error(AppLockResetNotConfirmed());
+
+    try {
+      await _store.clear();
+    } catch (error, stackTrace) {
+      // Fail closed: the blob is still there, so the app stays locked.
+      return Error(AppLockStorageFailure(cause: error, stackTrace: stackTrace));
+    }
+
+    // Nothing is left to read, and the cached (possibly failed) load must
+    // not be reused. Documents in the vault and database are untouched.
+    _initialization = Future<void>.value();
+    _emit(
+      const AppLockState(
+        status: LockStatus.disabled,
+        secret: null,
+        failedAttempts: 0,
+        lockedUntil: null,
       ),
     );
 
@@ -392,10 +450,15 @@ final class LockControllerImpl implements AppLockService {
     LockSecret secret, {
     required LockStatus status,
   }) async {
+    // A full save is an explicit state change: start from a clean backoff.
+    final stored = secret.copyWith(
+      failedAttempts: 0,
+      clearLockedUntil: true,
+    );
     try {
       final kek = await _keyManager.createOrGetKek();
       final payload = await _encryption.encrypt(
-        plaintext: secret.toBytes(),
+        plaintext: stored.toBytes(),
         key: kek,
       );
       await _store.write(LockBlob.fromPayload(payload).encode());
@@ -405,7 +468,7 @@ final class LockControllerImpl implements AppLockService {
 
     _emit(
       _state.copyWith(
-        secret: secret,
+        secret: stored,
         status: status,
         failedAttempts: 0,
         clearLockedUntil: true,
@@ -425,25 +488,62 @@ final class LockControllerImpl implements AppLockService {
     return PinVerifier.constantTimeEquals(candidate, secret.verifier);
   }
 
-  AppLockFailure _recordMiss(LockSecret secret) {
+  Future<AppLockFailure> _recordMiss(LockSecret secret) async {
     final attempts = _state.failedAttempts + 1;
     final maxAttempts = secret.policy.maxPinAttempts;
 
     if (attempts < maxAttempts) {
-      _emit(_state.copyWith(failedAttempts: attempts));
+      final updated = secret.copyWith(
+        failedAttempts: attempts,
+        clearLockedUntil: true,
+      );
+      _emit(
+        _state.copyWith(
+          secret: updated,
+          failedAttempts: attempts,
+          clearLockedUntil: true,
+        ),
+      );
+      await _persistSecret(updated);
 
       return AppLockWrongPin(attemptsRemaining: maxAttempts - attempts);
     }
 
     final delay = _backoffDelay(attempts - maxAttempts);
+    final until = _now().add(delay);
+    final updated = secret.copyWith(
+      failedAttempts: attempts,
+      lockedUntil: until,
+    );
     _emit(
       _state.copyWith(
+        secret: updated,
         failedAttempts: attempts,
-        lockedUntil: _now().add(delay),
+        lockedUntil: until,
       ),
     );
+    await _persistSecret(updated);
 
     return AppLockLockedOut(remaining: delay);
+  }
+
+  /// Re-seals [secret] so the attempt counter and deadline survive a
+  /// restart. Best-effort: if secure storage rejects the write, the
+  /// in-memory pacing still applies for this session and the app stays
+  /// locked. Losing durability is preferable to reporting a wrong PIN.
+  Future<void> _persistSecret(LockSecret secret) async {
+    try {
+      final kek = await _keyManager.createOrGetKek();
+      final payload = await _encryption.encrypt(
+        plaintext: secret.toBytes(),
+        key: kek,
+      );
+      await _store.write(LockBlob.fromPayload(payload).encode());
+    } catch (error) {
+      Log.warning(
+        'App Lock: backoff could not be persisted (${error.runtimeType})',
+      );
+    }
   }
 
   /// One second after the threshold, doubling per extra miss, capped so the

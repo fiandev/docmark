@@ -1,14 +1,14 @@
 import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
-import 'package:flutter_template/src/core/base/base.dart';
-import 'package:flutter_template/src/core/security/encryption_service.dart';
-import 'package:flutter_template/src/core/security/key_manager.dart';
-import 'package:flutter_template/src/core/security/lock/app_lock_failure.dart';
-import 'package:flutter_template/src/core/security/lock/biometric_authenticator.dart';
-import 'package:flutter_template/src/core/security/lock/lock_controller_impl.dart';
-import 'package:flutter_template/src/core/security/lock/lock_state_store.dart';
-import 'package:flutter_template/src/core/security/lock/pin_verifier.dart';
+import 'package:docmark/src/core/base/base.dart';
+import 'package:docmark/src/core/security/encryption_service.dart';
+import 'package:docmark/src/core/security/key_manager.dart';
+import 'package:docmark/src/core/security/lock/app_lock_failure.dart';
+import 'package:docmark/src/core/security/lock/biometric_authenticator.dart';
+import 'package:docmark/src/core/security/lock/lock_controller_impl.dart';
+import 'package:docmark/src/core/security/lock/lock_state_store.dart';
+import 'package:docmark/src/core/security/lock/pin_verifier.dart';
 
 /// Fast-enough PBKDF2 for state-machine tests. The shipped default is
 /// asserted separately in `pin_verifier_test.dart`.
@@ -21,8 +21,19 @@ final class MemoryLockStateStore implements LockStateStore {
   String? value;
   int writes = 0;
 
+  /// Number of upcoming reads that fail before the stored value is returned.
+  /// Models a busy or temporarily unavailable platform keystore.
+  int failReads = 0;
+
   @override
-  Future<String?> read() async => value;
+  Future<String?> read() async {
+    if (failReads > 0) {
+      failReads -= 1;
+      throw const _KeystoreUnavailable();
+    }
+
+    return value;
+  }
 
   @override
   Future<void> write(String blob) async {
@@ -34,6 +45,10 @@ final class MemoryLockStateStore implements LockStateStore {
   Future<void> clear() async {
     value = null;
   }
+}
+
+final class _KeystoreUnavailable implements Exception {
+  const _KeystoreUnavailable();
 }
 
 final class FakeKeyManager implements KeyManager {

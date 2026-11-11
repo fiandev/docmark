@@ -1,4 +1,4 @@
-import 'package:flutter_template/src/core/security/lock_controller.dart';
+import 'package:docmark/src/core/security/lock_controller.dart';
 
 /// Deterministic [AppLockController] for router and settings tests.
 class FakeAppLockController implements AppLockController {

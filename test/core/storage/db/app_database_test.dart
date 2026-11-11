@@ -1,10 +1,10 @@
 import 'package:drift/native.dart';
-import 'package:flutter_template/src/core/storage/db/app_database.dart';
-import 'package:flutter_template/src/core/storage/db/dao/asset_dao.dart';
-import 'package:flutter_template/src/core/storage/db/dao/document_dao.dart';
-import 'package:flutter_template/src/core/storage/db/dao/history_dao.dart';
-import 'package:flutter_template/src/core/storage/db/dao/meta_dao.dart';
-import 'package:flutter_template/src/core/storage/db/dao/preset_dao.dart';
+import 'package:docmark/src/core/storage/db/app_database.dart';
+import 'package:docmark/src/core/storage/db/dao/asset_dao.dart';
+import 'package:docmark/src/core/storage/db/dao/document_dao.dart';
+import 'package:docmark/src/core/storage/db/dao/history_dao.dart';
+import 'package:docmark/src/core/storage/db/dao/meta_dao.dart';
+import 'package:docmark/src/core/storage/db/dao/preset_dao.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

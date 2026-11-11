@@ -20,7 +20,10 @@ class LoggingCrashReporter implements CrashReporter {
 
   @override
   void report(Object error, StackTrace? stackTrace, {bool fatal = false}) {
-    Log.error('CrashReporter${fatal ? ' (fatal)' : ''}: $error');
+    // Type only: an exception message can embed a path or a stored value.
+    Log.error(
+      'CrashReporter${fatal ? ' (fatal)' : ''}: ${error.runtimeType}',
+    );
     if (stackTrace != null) Log.error(stackTrace.toString());
   }
 }

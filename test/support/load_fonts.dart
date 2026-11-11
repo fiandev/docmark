@@ -1,5 +1,5 @@
 import 'package:flutter/services.dart';
-import 'package:flutter_template/src/domain/services/font_registry.dart';
+import 'package:docmark/src/domain/services/font_registry.dart';
 
 /// Loads every bundled font family into the test binding.
 ///

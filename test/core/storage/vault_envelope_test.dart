@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:flutter_template/src/core/security/encryption_service.dart';
-import 'package:flutter_template/src/core/storage/vault/vault_envelope.dart';
+import 'package:docmark/src/core/security/encryption_service.dart';
+import 'package:docmark/src/core/storage/vault/vault_envelope.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

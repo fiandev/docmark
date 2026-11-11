@@ -1,9 +1,9 @@
-import 'package:flutter_template/src/core/base/result.dart';
-import 'package:flutter_template/src/core/base/unit.dart';
-import 'package:flutter_template/src/core/security/secure_file_vault.dart';
-import 'package:flutter_template/src/domain/entities/history.dart';
-import 'package:flutter_template/src/domain/failures/business_failure.dart';
-import 'package:flutter_template/src/domain/repositories/history_repository.dart';
+import 'package:docmark/src/core/base/result.dart';
+import 'package:docmark/src/core/base/unit.dart';
+import 'package:docmark/src/core/security/secure_file_vault.dart';
+import 'package:docmark/src/domain/entities/history.dart';
+import 'package:docmark/src/domain/failures/business_failure.dart';
+import 'package:docmark/src/domain/repositories/history_repository.dart';
 
 /// In-memory history store for page tests.
 final class FakeHistoryRepository implements HistoryRepository {

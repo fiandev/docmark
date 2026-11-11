@@ -1,7 +1,13 @@
-import 'package:flutter_template/src/core/base/result.dart';
-import 'package:flutter_template/src/core/base/unit.dart';
-import 'package:flutter_template/src/domain/entities/history.dart';
-import 'package:flutter_template/src/domain/failures/business_failure.dart';
+import 'dart:typed_data';
+
+import 'package:docmark/src/core/base/result.dart';
+import 'package:docmark/src/core/base/unit.dart';
+import 'package:docmark/src/core/security/secure_file_vault.dart';
+import 'package:docmark/src/core/storage/db/dao/asset_dao.dart';
+import 'package:docmark/src/core/storage/vault/watermark_asset_store.dart';
+import 'package:docmark/src/data/repositories/history_repository_impl.dart';
+import 'package:docmark/src/domain/entities/history.dart';
+import 'package:docmark/src/domain/failures/business_failure.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'harness.dart';
@@ -72,6 +78,33 @@ void main() {
       expect(listed, isEmpty);
     });
 
+    test('delete commits the row before the blob delete can fail', () async {
+      final entry = await _entry(harness, 'h1', DateTime.utc(2026, 6, 1));
+      await harness.history().record(entry);
+      final repository = HistoryRepositoryImpl(
+        crashReporter: harness.crashReporter,
+        database: harness.database,
+        images: WatermarkAssetStore(
+          vault: _VaultWithFailingDelete(harness.vault),
+          assets: AssetDao(harness.database),
+        ),
+      );
+
+      final result = await repository.delete('h1');
+
+      expect(result, isA<Error<Unit, BusinessFailure>>());
+      expect(
+        await harness.database.select(harness.database.historyEntries).get(),
+        isEmpty,
+      );
+      expect(
+        await harness.database.select(harness.database.assetLinks).get(),
+        isEmpty,
+      );
+      // The row is gone; the two blobs remain orphaned and sweepable.
+      expect(await harness.files(), hasLength(2));
+    });
+
     test('clear removes every entry and every asset', () async {
       final repository = harness.history();
       final first = await _entry(harness, 'h1', DateTime.utc(2026, 6, 1));
@@ -117,4 +150,35 @@ Future<HistoryEntryEntity> _entry(
     originalRef: original,
     processedRef: processed,
   );
+}
+
+/// Delegates reads and writes but refuses to delete, so the ordering test can
+/// let the row transaction commit and fail at the blob step.
+final class _VaultWithFailingDelete implements SecureFileVault {
+  _VaultWithFailingDelete(this._inner);
+
+  final SecureFileVault _inner;
+
+  @override
+  Future<AssetRef> put({
+    required Uint8List bytes,
+    required String extension,
+    String? assetId,
+  }) => _inner.put(bytes: bytes, extension: extension, assetId: assetId);
+
+  @override
+  Future<Uint8List> read(AssetRef ref) => _inner.read(ref);
+
+  @override
+  Future<bool> exists(AssetRef ref) => _inner.exists(ref);
+
+  @override
+  Future<void> delete(AssetRef ref) async => throw _VaultLocked();
+
+  @override
+  Future<void> deleteAll() => _inner.deleteAll();
+}
+
+final class _VaultLocked implements Exception {
+  const _VaultLocked();
 }

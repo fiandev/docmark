@@ -1,12 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_template/src/core/di/features/app_lock_providers.dart';
-import 'package:flutter_template/src/core/security/lock_controller.dart';
-import 'package:flutter_template/src/presentation/core/application_state/onboarding_status_provider/onboarding_status_provider.dart';
-import 'package:flutter_template/src/presentation/core/application_state/startup_provider/startup_provider.dart';
-import 'package:flutter_template/src/presentation/core/router/router_state/router_state_provider.dart';
-import 'package:flutter_template/src/presentation/core/router/routes.dart';
+import 'package:docmark/src/core/di/features/app_lock_providers.dart';
+import 'package:docmark/src/core/security/lock_controller.dart';
+import 'package:docmark/src/presentation/core/application_state/onboarding_status_provider/onboarding_status_provider.dart';
+import 'package:docmark/src/presentation/core/application_state/startup_provider/startup_provider.dart';
+import 'package:docmark/src/presentation/core/router/router_state/router_state_provider.dart';
+import 'package:docmark/src/presentation/core/router/routes.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

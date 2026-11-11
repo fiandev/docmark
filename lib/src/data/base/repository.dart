@@ -93,8 +93,10 @@ abstract base class Repository {
     StackTrace stackTrace,
     Result<T, BusinessFailure>? Function(InfraFailure failure)? recover,
   ) {
-    Log.error(e.toString());
-    Log.error(stackTrace.toString());
+    // Type only: a message can carry a file path, a document name, or a
+    // fragment of stored JSON, and a stack trace names internal frames the
+    // user never needs. The classified failure keeps the detail in memory.
+    Log.error('Repository operation failed (${e.runtimeType})');
     final infra = e.toInfraFailure(stackTrace);
 
     return recover?.call(infra) ?? Error(infra.toBusinessFailure());

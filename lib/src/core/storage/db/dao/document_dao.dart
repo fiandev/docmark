@@ -107,4 +107,11 @@ final class DocumentDao {
           ..where((table) => table.id.equals(documentId)))
         .go();
   }
+
+  /// Empties the source references, pages, and document metadata.
+  Future<void> deleteAll() async {
+    await _db.delete(_db.documentAssets).go();
+    await _db.delete(_db.documentPages).go();
+    await _db.delete(_db.documents).go();
+  }
 }

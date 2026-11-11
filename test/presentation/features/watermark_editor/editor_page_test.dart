@@ -5,17 +5,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_template/src/core/di/features/editor_providers.dart';
-import 'package:flutter_template/src/core/di/features/import_providers.dart';
-import 'package:flutter_template/src/core/di/features/render_providers.dart';
-import 'package:flutter_template/src/core/di/features/security_providers.dart';
-import 'package:flutter_template/src/core/di/features/storage_providers.dart';
-import 'package:flutter_template/src/core/gen/l10n/app_localizations.dart';
-import 'package:flutter_template/src/domain/entities/image_format.dart';
-import 'package:flutter_template/src/domain/repositories/document_repository.dart';
-import 'package:flutter_template/src/domain/services/render_contract.dart';
-import 'package:flutter_template/src/presentation/core/theme/theme.dart';
-import 'package:flutter_template/src/presentation/features/watermark_editor/view/editor_page.dart';
+import 'package:docmark/src/core/di/features/editor_providers.dart';
+import 'package:docmark/src/core/di/features/import_providers.dart';
+import 'package:docmark/src/core/di/features/render_providers.dart';
+import 'package:docmark/src/core/di/features/security_providers.dart';
+import 'package:docmark/src/core/di/features/storage_providers.dart';
+import 'package:docmark/src/core/gen/l10n/app_localizations.dart';
+import 'package:docmark/src/domain/entities/image_format.dart';
+import 'package:docmark/src/domain/repositories/document_repository.dart';
+import 'package:docmark/src/domain/services/render_contract.dart';
+import 'package:docmark/src/presentation/core/theme/theme.dart';
+import 'package:docmark/src/presentation/features/watermark_editor/view/editor_page.dart';
 
 import '../../../data/repositories/docmark/harness.dart';
 import '../../../support/fake_watermark_renderer.dart';

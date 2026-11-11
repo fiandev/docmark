@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter_template/src/core/security/encryption_service.dart';
-import 'package:flutter_template/src/core/security/key_manager.dart';
-import 'package:flutter_template/src/core/security/secure_file_vault.dart';
-import 'package:flutter_template/src/core/security/src/aes_gcm_encryption_service.dart';
-import 'package:flutter_template/src/core/storage/vault/secure_file_vault_impl.dart';
+import 'package:docmark/src/core/security/encryption_service.dart';
+import 'package:docmark/src/core/security/key_manager.dart';
+import 'package:docmark/src/core/security/secure_file_vault.dart';
+import 'package:docmark/src/core/security/src/aes_gcm_encryption_service.dart';
+import 'package:docmark/src/core/storage/vault/secure_file_vault_impl.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 

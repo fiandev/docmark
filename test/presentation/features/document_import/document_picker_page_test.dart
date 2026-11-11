@@ -6,12 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:flutter_template/src/core/di/features/import_providers.dart';
-import 'package:flutter_template/src/core/di/features/presets_providers.dart';
-import 'package:flutter_template/src/core/gen/l10n/app_localizations.dart';
-import 'package:flutter_template/src/presentation/core/router/routes.dart';
-import 'package:flutter_template/src/presentation/core/theme/theme.dart';
-import 'package:flutter_template/src/presentation/features/document_import/view/document_picker_page.dart';
+import 'package:docmark/src/core/di/features/import_providers.dart';
+import 'package:docmark/src/core/di/features/presets_providers.dart';
+import 'package:docmark/src/core/gen/l10n/app_localizations.dart';
+import 'package:docmark/src/presentation/core/router/routes.dart';
+import 'package:docmark/src/presentation/core/theme/theme.dart';
+import 'package:docmark/src/presentation/features/document_import/view/document_picker_page.dart';
 
 import 'support/import_fakes.dart';
 

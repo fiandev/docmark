@@ -2,20 +2,20 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_template/src/core/base/result.dart';
-import 'package:flutter_template/src/core/base/unit.dart';
-import 'package:flutter_template/src/core/security/secure_file_vault.dart';
-import 'package:flutter_template/src/domain/entities/document.dart';
-import 'package:flutter_template/src/domain/entities/history.dart';
-import 'package:flutter_template/src/domain/entities/image_format.dart';
-import 'package:flutter_template/src/domain/entities/normalized_rect.dart';
-import 'package:flutter_template/src/domain/entities/watermark_element.dart';
-import 'package:flutter_template/src/domain/failures/business_failure.dart';
-import 'package:flutter_template/src/domain/repositories/document_repository.dart';
-import 'package:flutter_template/src/domain/repositories/history_repository.dart';
-import 'package:flutter_template/src/domain/services/render_contract.dart';
-import 'package:flutter_template/src/presentation/features/export/controller/export_controller.dart';
-import 'package:flutter_template/src/presentation/features/export/controller/export_file_writer.dart';
+import 'package:docmark/src/core/base/result.dart';
+import 'package:docmark/src/core/base/unit.dart';
+import 'package:docmark/src/core/security/secure_file_vault.dart';
+import 'package:docmark/src/domain/entities/document.dart';
+import 'package:docmark/src/domain/entities/history.dart';
+import 'package:docmark/src/domain/entities/image_format.dart';
+import 'package:docmark/src/domain/entities/normalized_rect.dart';
+import 'package:docmark/src/domain/entities/watermark_element.dart';
+import 'package:docmark/src/domain/failures/business_failure.dart';
+import 'package:docmark/src/domain/repositories/document_repository.dart';
+import 'package:docmark/src/domain/repositories/history_repository.dart';
+import 'package:docmark/src/domain/services/render_contract.dart';
+import 'package:docmark/src/presentation/features/export/controller/export_controller.dart';
+import 'package:docmark/src/presentation/features/export/controller/export_file_writer.dart';
 
 import '../../../support/fake_secure_file_vault.dart';
 import '../../../support/fake_watermark_renderer.dart';
@@ -188,8 +188,36 @@ void main() {
       expect(writer.saved.single.$1, 'scan_watermarked.png');
       expect(writer.shared, <String>['/temp/scan_watermarked.png']);
       expect(writer.subject, 'Watermarked document');
+      // The staged plaintext copy never outlives the share call.
+      expect(writer.deleted, <String>['/temp/scan_watermarked.png']);
       expect(documents.pages[0], snapshot);
       expect(documents.deleteCalls, 0);
+    });
+
+    test('a failing share still deletes the staged plaintext files', () async {
+      final writer = _FakeFileWriter()..failShare = true;
+      final controller = _controller(
+        document: _imageDocument(),
+        documents: _FakeDocumentRepository(<int, Uint8List>{
+          0: Uint8List.fromList(<int>[1, 2, 3]),
+        }),
+        history: _FakeHistoryRepository(),
+        vault: FakeSecureFileVault(),
+        renderer: FakeWatermarkRenderer(),
+        fileWriter: writer,
+      );
+      final bundle = await controller.exportDocument(
+        format: png,
+        jpegQuality: 0.9,
+        pages: const <int>{0},
+      );
+
+      await expectLater(
+        controller.share(bundle, subject: 'Watermarked document'),
+        throwsA(isA<StateError>()),
+      );
+
+      expect(writer.deleted, <String>['/temp/scan_watermarked.png']);
     });
   });
 }
@@ -368,7 +396,9 @@ class _FakeHistoryRepository implements HistoryRepository {
 class _FakeFileWriter implements ExportFileWriter {
   final List<(String, Uint8List)> saved = <(String, Uint8List)>[];
   final List<String> shared = <String>[];
+  final List<String> deleted = <String>[];
   String? subject;
+  bool failShare = false;
 
   @override
   Future<String> saveToDevice({
@@ -389,10 +419,16 @@ class _FakeFileWriter implements ExportFileWriter {
   }
 
   @override
+  Future<void> deleteTempFile(String path) async {
+    deleted.add(path);
+  }
+
+  @override
   Future<void> shareFiles({
     required List<String> paths,
     required String subject,
   }) async {
+    if (failShare) throw StateError('share failed');
     this.subject = subject;
     shared.addAll(paths);
   }

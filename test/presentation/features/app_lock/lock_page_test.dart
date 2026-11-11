@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_template/src/core/di/features/app_lock_providers.dart';
-import 'package:flutter_template/src/core/gen/l10n/app_localizations.dart';
-import 'package:flutter_template/src/core/security/lock/app_lock_service.dart';
-import 'package:flutter_template/src/core/security/lock/lock_controller_impl.dart';
-import 'package:flutter_template/src/core/security/lock_controller.dart';
-import 'package:flutter_template/src/presentation/core/theme/theme.dart';
-import 'package:flutter_template/src/presentation/features/app_lock/view/lock_page.dart';
+import 'package:docmark/src/core/di/features/app_lock_providers.dart';
+import 'package:docmark/src/core/gen/l10n/app_localizations.dart';
+import 'package:docmark/src/core/security/lock/app_lock_service.dart';
+import 'package:docmark/src/core/security/lock/lock_controller_impl.dart';
+import 'package:docmark/src/core/security/lock_controller.dart';
+import 'package:docmark/src/presentation/core/theme/theme.dart';
+import 'package:docmark/src/presentation/features/app_lock/view/lock_page.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../core/security/lock/support/app_lock_fakes.dart';

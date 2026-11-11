@@ -61,11 +61,12 @@ final class AppLockState {
   /// Null exactly when App Lock was never enabled, or was disabled.
   final LockSecret? secret;
 
-  /// Consecutive misses in this process. Not persisted: a restart begins
-  /// locked and the counter's purpose is a pacing delay, not a lockout.
+  /// Consecutive misses. Persisted with the lock blob, so restarting the
+  /// app does not reset the backoff.
   final int failedAttempts;
 
-  /// When the backoff expires; null when no cooldown is active.
+  /// When the backoff expires; null when no cooldown is active. Persisted
+  /// alongside [failedAttempts].
   final DateTime? lockedUntil;
 
   bool get isEnabled => secret != null;
@@ -147,6 +148,16 @@ abstract interface class AppLockService implements AppLockController {
   /// Turns App Lock off. Requires [pin] so a passer-by cannot disable it
   /// from an unlocked session.
   Future<Result<Unit, AppLockFailure>> disableLock(String pin);
+
+  /// Deletes the persisted lock blob and lock state so a user who can no
+  /// longer unlock can recover without losing documents. Refuses unless
+  /// [confirmed] is true — the caller must show the confirmation first.
+  ///
+  /// On success the app settles on [LockStatus.disabled]; on a storage
+  /// failure it stays locked (fail closed).
+  Future<Result<Unit, AppLockFailure>> resetLockData({
+    bool confirmed = false,
+  });
 
   /// Updates the grace period and/or the biometrics flag without touching
   /// the verifier.

@@ -47,8 +47,7 @@ those rules and the template decisions in one place.
 - The code generator makes each provider auto-dispose. This is the
   default. Keep it.
 - Use `keepAlive: true` only for objects that live as long as the
-  application. Examples: the network stack, the token manager, the
-  repositories.
+  application. Examples: the database, the vault, the repositories.
 - After each `await` in a notifier method, check `ref.mounted` before
   you touch `state` or `ref`. Riverpod 3 throws an error when you touch
   a disposed notifier.
@@ -73,7 +72,7 @@ those rules and the template decisions in one place.
 
 ### Navigate
 
-- Do not push a route in reaction to an auth-state change.
+- Do not push a route in reaction to an App Lock or onboarding change.
 - Invalidate the applicable status provider. The redirect gate then
   moves the user.
 
@@ -83,5 +82,5 @@ those rules and the template decisions in one place.
   use case correctly, because each build uses `ref.watch`.
 - A notifier method that continues after dispose stops at the
   `ref.mounted` check. The application does not throw.
-- The login and logout notifiers keep the loading-state pattern until
+- The App Lock and onboarding notifiers keep the loading-state pattern until
   the Mutation API is stable.

@@ -1,12 +1,12 @@
 import 'dart:typed_data';
 
-import 'package:flutter_template/src/core/security/lock/pin_verifier.dart';
+import 'package:docmark/src/core/security/lock/pin_verifier.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('PinVerifier', () {
-    test('ships with a 300k-iteration floor', () {
-      expect(PinVerifier.defaultIterations, greaterThanOrEqualTo(300000));
+    test('ships with a 600k-iteration floor', () {
+      expect(PinVerifier.defaultIterations, greaterThanOrEqualTo(600000));
     });
 
     test('derives the same verifier for the same PIN and salt', () async {

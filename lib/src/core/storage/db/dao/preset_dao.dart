@@ -79,4 +79,10 @@ final class PresetDao {
           .go();
     });
   }
+
+  /// Empties the asset associations and then the preset rows.
+  Future<void> deleteAll() async {
+    await _db.delete(_db.presetAssets).go();
+    await _db.delete(_db.presets).go();
+  }
 }

@@ -3,14 +3,15 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_template/src/core/di/features/app_lock_providers.dart';
-import 'package:flutter_template/src/core/di/features/history_providers.dart';
-import 'package:flutter_template/src/core/di/features/security_providers.dart';
-import 'package:flutter_template/src/core/gen/l10n/app_localizations.dart';
-import 'package:flutter_template/src/core/security/lock_controller.dart';
-import 'package:flutter_template/src/presentation/core/theme/theme.dart';
-import 'package:flutter_template/src/presentation/features/settings/controller/storage_overview.dart';
-import 'package:flutter_template/src/presentation/features/settings/view/settings_page.dart';
+import 'package:docmark/src/core/di/features/app_lock_providers.dart';
+import 'package:docmark/src/core/di/features/history_providers.dart';
+import 'package:docmark/src/core/di/features/security_providers.dart';
+import 'package:docmark/src/core/di/features/storage_providers.dart';
+import 'package:docmark/src/core/gen/l10n/app_localizations.dart';
+import 'package:docmark/src/core/security/lock_controller.dart';
+import 'package:docmark/src/presentation/core/theme/theme.dart';
+import 'package:docmark/src/presentation/features/settings/controller/storage_overview.dart';
+import 'package:docmark/src/presentation/features/settings/view/settings_page.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/fake_secure_file_vault.dart';
@@ -22,10 +23,12 @@ void main() {
     required FakeAppLockService service,
     FakeHistoryRepository? history,
     FakeSecureFileVault? vault,
+    FakeAppDataWipe? wipe,
     StorageUsage usage = StorageUsage.empty,
   }) async {
     final repository = history ?? FakeHistoryRepository();
     final fileVault = vault ?? FakeSecureFileVault();
+    final wipeService = wipe ?? FakeAppDataWipe();
 
     await tester.pumpWidget(
       ProviderScope(
@@ -42,6 +45,7 @@ void main() {
           }),
           historyRepositoryProvider.overrideWith((ref) => repository),
           secureFileVaultProvider.overrideWith((ref) => fileVault),
+          appDataWipeProvider.overrideWith((ref) => wipeService),
           storageUsageProvider.overrideWith((ref) async => usage),
         ],
         child: MaterialApp(
@@ -161,16 +165,20 @@ void main() {
       expect(history.clearCalls, 1);
     });
 
-    testWidgets('delete all data clears history and the vault', (tester) async {
+    testWidgets('delete all data wipes every store and the vault', (
+      tester,
+    ) async {
       final history = FakeHistoryRepository();
       final vault = FakeSecureFileVault();
       vault.assets['asset-1'] = Uint8List.fromList([1, 2, 3]);
+      final wipe = FakeAppDataWipe(onWipe: vault.assets.clear);
 
       await pumpSettings(
         tester,
         service: FakeAppLockService(),
         history: history,
         vault: vault,
+        wipe: wipe,
       );
 
       await tester.scrollUntilVisible(find.text('Delete all app data'), 200);
@@ -180,7 +188,10 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
       await tester.pumpAndSettle();
 
-      expect(history.clearCalls, 1);
+      expect(wipe.wipeCalls, 1);
+      // The wipe is not the history-only cascade; it covers documents and
+      // presets too, so the history repository is never called directly.
+      expect(history.clearCalls, 0);
       expect(vault.assets, isEmpty);
     });
   });

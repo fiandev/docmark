@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
-import 'package:flutter_template/src/data/services/media/image_media_normalizer.dart';
-import 'package:flutter_template/src/domain/entities/image_format.dart';
-import 'package:flutter_template/src/domain/services/format_probe.dart';
+import 'package:docmark/src/data/services/media/image_media_normalizer.dart';
+import 'package:docmark/src/domain/entities/image_format.dart';
+import 'package:docmark/src/domain/services/format_probe.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 

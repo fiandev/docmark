@@ -1,5 +1,5 @@
-import 'package:flutter_template/src/data/failures/exception_classifier.dart';
-import 'package:flutter_template/src/data/failures/infra_failure.dart';
+import 'package:docmark/src/data/failures/exception_classifier.dart';
+import 'package:docmark/src/data/failures/infra_failure.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Produces a real [TypeError] via a deliberate bad cast.

@@ -12,8 +12,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../logger/log.dart';
+import '../../storage/app_data_wipe.dart';
 import '../../storage/db/app_database.dart';
 import '../../storage/db/dao/asset_dao.dart';
+import '../../storage/scratch_paths.dart';
 import '../../storage/temp_cleanup.dart';
 import '../../storage/vault/watermark_asset_store.dart';
 import 'security_providers.dart';
@@ -30,7 +32,11 @@ abstract interface class TempFileCleanupService {
 @Riverpod(keepAlive: true)
 TempFileCleanupService tempFileCleanupService(Ref ref) =>
     TempFileCleanupServiceImpl(
-      directories: [temporaryDirectory, vaultStagingDirectory],
+      directories: [
+        temporaryDirectory,
+        shareDirectory,
+        vaultStagingDirectory,
+      ],
       onError: (error) =>
           Log.warning('Temp cleanup skipped: ${error.runtimeType}'),
     );
@@ -69,8 +75,25 @@ Future<Directory> databaseDirectory() async {
 Future<Directory> temporaryDirectory() async {
   final temp = await getTemporaryDirectory();
 
-  return Directory(p.join(temp.path, 'docmark_tmp'));
+  return Directory(p.join(temp.path, tempDirectoryName));
 }
+
+/// Plaintext files staged for the platform share sheet. Swept at launch so
+/// a crash between writing and sharing cannot leave a copy behind.
+Future<Directory> shareDirectory() async {
+  final temp = await getTemporaryDirectory();
+
+  return Directory(p.join(temp.path, shareDirectoryName));
+}
+
+/// The "delete all app data" operation over the database, vault, and
+/// scratch directories.
+@Riverpod(keepAlive: true)
+AppDataWipe appDataWipe(Ref ref) => AppDataWipeImpl(
+  database: ref.watch(appDatabaseProvider),
+  vault: ref.watch(secureFileVaultProvider),
+  directories: [temporaryDirectory, shareDirectory],
+);
 
 /// The vault's staging directory, where atomic writes park a partial blob.
 Future<Directory> vaultStagingDirectory() async {

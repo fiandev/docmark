@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 
 import 'package:drift/native.dart';
-import 'package:flutter_template/src/core/security/secure_file_vault.dart';
-import 'package:flutter_template/src/core/storage/db/app_database.dart';
-import 'package:flutter_template/src/core/storage/db/dao/asset_dao.dart';
-import 'package:flutter_template/src/core/storage/vault/watermark_asset_store.dart';
+import 'package:docmark/src/core/security/secure_file_vault.dart';
+import 'package:docmark/src/core/storage/db/app_database.dart';
+import 'package:docmark/src/core/storage/db/dao/asset_dao.dart';
+import 'package:docmark/src/core/storage/vault/watermark_asset_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

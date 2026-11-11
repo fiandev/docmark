@@ -3,17 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:flutter_template/src/core/di/features/history_providers.dart';
-import 'package:flutter_template/src/core/di/features/import_providers.dart';
-import 'package:flutter_template/src/core/gen/l10n/app_localizations.dart';
-import 'package:flutter_template/src/domain/entities/document.dart';
-import 'package:flutter_template/src/domain/entities/history.dart';
-import 'package:flutter_template/src/domain/repositories/document_repository.dart';
-import 'package:flutter_template/src/domain/repositories/history_repository.dart';
-import 'package:flutter_template/src/presentation/core/router/routes.dart';
-import 'package:flutter_template/src/presentation/core/theme/theme.dart';
-import 'package:flutter_template/src/presentation/features/history/controller/history_presentation.dart';
-import 'package:flutter_template/src/presentation/features/history/view/history_page.dart';
+import 'package:docmark/src/core/di/features/history_providers.dart';
+import 'package:docmark/src/core/di/features/import_providers.dart';
+import 'package:docmark/src/core/gen/l10n/app_localizations.dart';
+import 'package:docmark/src/domain/entities/document.dart';
+import 'package:docmark/src/domain/entities/history.dart';
+import 'package:docmark/src/domain/repositories/document_repository.dart';
+import 'package:docmark/src/domain/repositories/history_repository.dart';
+import 'package:docmark/src/presentation/core/router/routes.dart';
+import 'package:docmark/src/presentation/core/theme/theme.dart';
+import 'package:docmark/src/presentation/features/history/controller/history_presentation.dart';
+import 'package:docmark/src/presentation/features/history/view/history_page.dart';
 
 import '../../../data/repositories/docmark/harness.dart';
 import 'support/fake_document_repository.dart';

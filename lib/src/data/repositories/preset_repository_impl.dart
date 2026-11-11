@@ -202,11 +202,13 @@ final class PresetRepositoryImpl extends Repository
         if (existing == null) throw _MissingPreset(presetId);
         final assetIds = await _presets.assetIdsFor(presetId);
 
-        await _presets.removeAssociations(presetId);
+        // Commit the row removal first; the blobs follow. A failed blob
+        // delete then leaves unreachable encrypted bytes (sweepable),
+        // never a preset whose images cannot be resolved.
+        await _presets.delete(presetId);
         for (final assetId in assetIds) {
           await _images.deleteIfUnreferenced(assetId);
         }
-        await _presets.delete(presetId);
 
         return Unit.value;
       },

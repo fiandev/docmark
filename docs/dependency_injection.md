@@ -1,141 +1,114 @@
-# Flutter Template: Dependency Injection Documentation
+# Dependency Injection
 
-This project uses **Riverpod** for dependency injection, rather than the injectable/get_it approach I incorrectly described earlier. Let me explain how dependency injection is actually implemented in this project:
+DocMark uses **Riverpod 3** with `riverpod_annotation` code generation. There
+is no service locator: providers are the only container, and feature code
+receives its dependencies through `ref`.
 
-## Core Concept
+## Layout
 
-The dependency injection system in this project leverages Riverpod's provider pattern to manage dependencies across the application. This approach offers several advantages:
-- Type safety
-- Dependency tree management
-- Automatic disposal of resources
-- Reactive state management
-- Testability
-
-## Structure
-
-The DI folder contains:
-- `dependency_injection.dart` - The central file that imports and organizes all DI components
-- `dependency_injection.g.dart` - Auto-generated code from Riverpod's code generator
-- `parts/` directory - Contains modular provider definitions organized by category:
-  - `externals.dart` - Providers for external packages (Dio, SharedPreferences, etc.)
-  - `services.dart` - Service layer providers
-  - `repository.dart` - Repository layer providers
-  - `data_source.dart` - Data source layer providers (currently empty)
-
-## Key Components
-
-### Provider Types
-
-The project uses different Riverpod provider types based on the lifecycle needs:
-
-1. **Provider** - For dependencies that need to be available for the entire app lifecycle
-   ```dart
-   @Riverpod(keepAlive: true)
-   CacheService cacheService(CacheServiceRef ref) { ... }
-   ```
-
-2. **AutoDisposeProvider** - For dependencies that should be disposed when no longer needed
-   ```dart
-   @riverpod
-   RestClient restClient(RestClientRef ref) { ... }
-   ```
-
-3. **FutureProvider** - For async dependencies
-   ```dart
-   @Riverpod(keepAlive: true)
-   Future<SharedPreferences> sharedPreferences(SharedPreferencesRef ref) => 
-       SharedPreferences.getInstance();
-   ```
-
-### Dependency Chain
-
-Dependencies are injected through a chain pattern:
-1. External providers (Dio, SharedPreferences) are created
-2. Service providers consume external providers
-3. Repository providers consume service providers
-4. View models/controllers consume repository providers
-
-## How to Use
-
-### 1. Define a Provider
-
-To create a new provider:
-
-```dart
-// In the appropriate part file (e.g., services.dart)
-@riverpod
-UserService userService(UserServiceRef ref) {
-  return UserServiceImpl(
-    client: ref.read(restClientProvider),
-    cache: ref.read(cacheServiceProvider),
-  );
-}
+```
+lib/src/core/di/
+├── dependency_injection.dart   # library: imports, parts, shared providers
+├── parts/
+│   ├── externals.dart          # platform/service singletons
+│   ├── repository.dart         # locale repository
+│   ├── services.dart           # cache service
+│   └── use_cases.dart          # locale use cases
+└── features/
+    ├── storage_providers.dart  # AppDatabase, vault, asset store, wipe, sweep
+    ├── security_providers.dart # KeyManager, EncryptionService, SecureFileVault
+    ├── app_lock_providers.dart # LockStateStore, biometrics, AppLockService
+    ├── history_providers.dart  # history repository, list, previews
+    ├── presets_providers.dart  # preset repository/list, pending preset
+    ├── editor_providers.dart
+    ├── import_providers.dart
+    ├── render_providers.dart
+    └── home_providers.dart
 ```
 
-### 2. Consume a Provider in Another Provider
+`*.g.dart` files are generated and git-ignored. Regenerate after changing any
+annotated provider:
 
-To use a provider as a dependency in another provider:
-
-```dart
-@riverpod
-UserRepository userRepository(UserRepositoryRef ref) {
-  return UserRepositoryImpl(
-    service: ref.read(userServiceProvider),
-  );
-}
+```bash
+dart run build_runner build --delete-conflicting-outputs
 ```
 
-### 3. Consume a Provider in UI
+## Rules
+
+1. **Cross-feature access goes through `core/di/features/`.** A feature must
+   not import another feature's files. Settings, for example, invalidates
+   `historyListProvider` and `presetListProvider` but never imports the
+   history or presets screens.
+2. **`keepAlive` is for expensive, process-wide objects.** The database,
+   vault, repositories, App Lock service, and key managers are keep-alive.
+   Screen reads are auto-dispose.
+3. **Providers construct synchronously where possible.** `AppDatabase` opens
+   lazily on first query so the provider can be synchronous while the
+   SQLCipher key round-trip happens off the build path.
+4. **No provider performs I/O at construction beyond starting a fire-and-forget
+   task** (`tempFileCleanupServiceProvider`, `appLockServiceProvider`). Startup
+   must never block on disk.
+5. **Provider retry is disabled** in `bootstrap()` (`retry: (_, __) => null`).
+   The router gate shows a retryable failure instead of an infinite retry
+   loop.
+
+## Typical provider
 
 ```dart
-class UserScreen extends ConsumerWidget {
+@Riverpod(keepAlive: true)
+HistoryRepository historyRepository(Ref ref) => HistoryRepositoryImpl(
+  crashReporter: ref.watch(crashReporterProvider),
+  database: ref.watch(appDatabaseProvider),
+  images: ref.watch(watermarkAssetStoreProvider),
+);
+```
+
+Use `ref.watch` when the dependency changing should rebuild the provider, and
+`ref.read` inside callbacks for one-off access.
+
+## State notifiers
+
+List state is a `Notifier` so mutations and invalidation live in one place:
+
+```dart
+@Riverpod(keepAlive: true)
+class PresetList extends _$PresetList {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final userRepo = ref.watch(userRepositoryProvider);
-    // Use the repository
+  Future<List<PresetEntity>> build() async { /* repository.list() */ }
+
+  Future<Result<Unit, BusinessFailure>> delete(String presetId) async {
+    final result = await ref.read(presetRepositoryProvider).delete(presetId);
+    if (result is Success<Unit, BusinessFailure>) ref.invalidateSelf();
+    return result;
   }
 }
 ```
 
-### 4. Creating Stateful Providers
+## Testing
 
-For providers that manage state:
+Override the seam the widget touches, not the whole container:
 
 ```dart
-@riverpod
-class UserState extends _$UserState {
-  @override
-  User? build() => null;
-  
-  void setUser(User user) => state = user;
-  void clearUser() => state = null;
-}
+ProviderScope(
+  overrides: [
+    historyRepositoryProvider.overrideWith((ref) => FakeHistoryRepository()),
+    secureFileVaultProvider.overrideWith((ref) => FakeSecureFileVault()),
+    appDataWipeProvider.overrideWith((ref) => FakeAppDataWipe()),
+  ],
+  child: const SettingsPage(),
+);
 ```
 
-## Regenerating Providers
+Repository tests do the opposite: they build the real implementations over
+an in-memory database and a temp-rooted vault (see
+`test/data/repositories/docmark/harness.dart`).
 
-After adding or modifying providers with the `@riverpod` annotation, regenerate the code:
+Useful defaults to override:
 
-```bash
-flutter pub run build_runner build --delete-conflicting-outputs
-```
-
-## Project-Specific Implementations
-
-The project includes several key providers:
-
-1. **SharedPreferences** - For persistent storage
-2. **Dio** - For HTTP requests with interceptors for token management and error handling
-3. **CacheService** - A wrapper around SharedPreferences
-4. **RestClient** - For API communication
-5. **AuthenticationRepository** - For user authentication
-
-## Best Practices
-
-1. **Modularity**: Keep providers organized in appropriate part files
-2. **Scoped Providers**: Use `AutoDisposeProvider` when appropriate to free resources
-3. **Reference Providers**: Use `ref.read()` for one-time access and `ref.watch()` for reactive updates
-4. **Provider Parameters**: Use `@riverpod` with parameters for flexible providers
-5. **Testing**: Mock providers using Riverpod's testing utilities
-
-This approach provides a clean, maintainable dependency injection system that leverages Riverpod's strengths for state management and dependency handling.
+| Provider | Fake |
+| --- | --- |
+| `crashReporterProvider` | `FakeCrashReporter` |
+| `lockStateStoreProvider` | `MemoryLockStateStore` |
+| `biometricAuthenticatorProvider` | `FakeBiometricAuthenticator` |
+| `secureFileVaultProvider` | `FakeSecureFileVault` |
+| `appDataWipeProvider` | `FakeAppDataWipe` |
