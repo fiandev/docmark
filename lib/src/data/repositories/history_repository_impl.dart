@@ -131,7 +131,7 @@ final class HistoryRepositoryImpl extends Repository
 
   Result<T, BusinessFailure>? _recoverMissing<T>(InfraFailure failure) {
     return failure.cause is _MissingEntry
-        ? const Error(BusinessFailure.notFound())
+        ? Error<T, BusinessFailure>(BusinessFailure.notFound())
         : null;
   }
 }

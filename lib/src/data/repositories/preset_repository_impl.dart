@@ -72,7 +72,9 @@ final class PresetRepositoryImpl extends Repository
   }) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) {
-      return const Error(BusinessFailure.invalidInput());
+      return const Error<PresetEntity, BusinessFailure>(
+        BusinessFailure.invalidInput(),
+      );
     }
 
     return asyncGuard(
@@ -112,7 +114,9 @@ final class PresetRepositoryImpl extends Repository
   ) async {
     final trimmed = preset.name.trim();
     if (trimmed.isEmpty) {
-      return const Error(BusinessFailure.invalidInput());
+      return const Error<PresetEntity, BusinessFailure>(
+        BusinessFailure.invalidInput(),
+      );
     }
 
     return asyncGuard(
@@ -291,7 +295,7 @@ final class PresetRepositoryImpl extends Repository
     if (cause is _MissingPreset ||
         cause is _MissingDocument ||
         cause is MissingAssetFailure) {
-      return const Error(BusinessFailure.notFound());
+      return Error<T, BusinessFailure>(BusinessFailure.notFound());
     }
 
     return null;

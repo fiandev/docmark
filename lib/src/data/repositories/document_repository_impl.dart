@@ -62,17 +62,23 @@ final class DocumentRepositoryImpl extends Repository
     ImportRequest request,
   ) async {
     if (request.bytes.isEmpty) {
-      return const Error(BusinessFailure.invalidInput());
+      return const Error<DocumentEntity, BusinessFailure>(
+        BusinessFailure.invalidInput(),
+      );
     }
 
     final MediaProbe probe;
     try {
       probe = await _normalizer.probe(request.bytes);
     } on FormatException {
-      return const Error(BusinessFailure.invalidInput());
+      return const Error<DocumentEntity, BusinessFailure>(
+        BusinessFailure.invalidInput(),
+      );
     }
     if (!probe.format.isSupported) {
-      return const Error(BusinessFailure.invalidInput());
+      return const Error<DocumentEntity, BusinessFailure>(
+        BusinessFailure.invalidInput(),
+      );
     }
 
     return asyncGuard(() async {
@@ -134,8 +140,12 @@ final class DocumentRepositoryImpl extends Repository
       () async {
         final document = await _documents.find(documentId);
         if (document == null) throw _MissingDocument(documentId);
-        final page = await _documents.findPage(documentId, pageIndex);
-        if (page == null) throw _MissingDocument('$documentId/$pageIndex');
+        // Page identity is the source document's page numbering, not the
+        // subset the importer recorded: `ExportRequest.resolvedPages`
+        // walks 0..pageCount-1, so that is the range to accept here.
+        if (pageIndex < 0 || pageIndex >= document.pageCount) {
+          throw _MissingDocument('$documentId/$pageIndex');
+        }
         final source = await _documents.findSourceAsset(documentId);
         if (source == null) throw _MissingDocument(documentId);
 
@@ -249,7 +259,7 @@ final class DocumentRepositoryImpl extends Repository
 
   Result<T, BusinessFailure>? _recoverNotFound<T>(InfraFailure failure) {
     return failure.cause is _MissingDocument
-        ? const Error(BusinessFailure.notFound())
+        ? Error<T, BusinessFailure>(BusinessFailure.notFound())
         : null;
   }
 
