@@ -301,5 +301,6 @@
   "editor_imageImportFailed": "The image could not be imported.",
   "editor_assetUnavailable": "The image is not available.",
   "editor_color_hex": "Hex colour",
-  "editor_layersEmpty": "No elements yet. Add text or an image to start."
+  "editor_layersEmpty": "No elements yet. Add text or an image to start.",
+  "presets_nameRequired": "A preset name is required."
 }
