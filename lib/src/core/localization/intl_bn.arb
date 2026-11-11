@@ -273,6 +273,7 @@
   "app_lock_setup_body": "App Lock keeps your encrypted documents behind a PIN or biometric check.",
   "app_lock_disabled_body": "App Lock is off. Anyone with your unlocked phone can open DocMark.",
   "app_lock_biometric_unavailable": "Biometrics are not available on this device.",
+  "app_lock_retry_in": "Try again in {seconds} seconds.",
   "failures_unknown": "Something went wrong.",
   "failures_storage": "DocMark could not read its encrypted storage.",
   "failures_encryption": "The file could not be encrypted.",
