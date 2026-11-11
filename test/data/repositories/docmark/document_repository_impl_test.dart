@@ -72,6 +72,8 @@ void main() {
       expect(entity.kind, DocumentKind.pdf);
       expect(entity.pageCount, 3);
       expect(entity.pageSizes.map((page) => page.index), [0, 1, 2]);
+      expect(entity.pageSourceIndices, [0, 1, 2]);
+      expect(entity.selectedPageCount, 3);
       expect(entity.pageSizes.first.widthPt, 612);
     });
 
@@ -89,8 +91,17 @@ void main() {
         ),
       );
 
+      // pageCount stays the source total; only pageSizes is the subset.
       expect(entity.pageCount, 3);
       expect(entity.pageSizes.map((page) => page.index), [1, 2]);
+      expect(entity.pageSourceIndices, [1, 2]);
+      expect(entity.selectedPageCount, 2);
+
+      expect(dataOf(await repository.readPage(entity.id, 1)), isNotEmpty);
+      expect(
+        await repository.readPage(entity.id, 0),
+        isA<Error<Uint8List, BusinessFailure>>(),
+      );
     });
 
     test('refuses an unsupported format before writing', () async {

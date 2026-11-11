@@ -90,6 +90,33 @@ void main() {
       expect(history.recorded, hasLength(1));
     });
 
+    test('a PDF page subset exports only the imported source pages', () async {
+      final documents = _PdfDocumentRepository();
+      final renderer = FakeWatermarkRenderer();
+      final controller = _controller(
+        document: _pdfSubsetDocument(),
+        documents: documents,
+        history: _FakeHistoryRepository(),
+        vault: FakeSecureFileVault(),
+        renderer: renderer,
+      );
+
+      // The empty selection resolves to the imported pages, not 0..2.
+      expect(controller.pageCount, 2);
+
+      final bundle = await controller.exportDocument(
+        format: png,
+        jpegQuality: 0.9,
+        pages: const <int>{1, 2},
+      );
+
+      expect(documents.reads, <int>[1, 2]);
+      expect(bundle.files.map((file) => file.fileName), <String>[
+        'report_watermarked_p2.png',
+        'report_watermarked_p3.png',
+      ]);
+    });
+
     test('a PDF exported as PDF rebuilds through the renderer', () async {
       final documents = _PdfDocumentRepository();
       final renderer = FakeWatermarkRenderer();
@@ -174,6 +201,7 @@ ExportController _controller({
   required SecureFileVault vault,
   required FakeWatermarkRenderer renderer,
   ExportFileWriter? fileWriter,
+  List<int> pageIndexes = const <int>[],
 }) {
   return ExportController(
     request: ExportRequest(
@@ -187,6 +215,7 @@ ExportController _controller({
           ),
         ],
       ),
+      pageIndexes: pageIndexes,
     ),
     renderer: renderer,
     documents: documents,
@@ -223,6 +252,14 @@ DocumentEntity _pdfDocument() {
       DocumentPage(index: 2, widthPt: 250, heightPt: 350),
     ],
     createdAt: DateTime.utc(2026),
+  );
+}
+
+DocumentEntity _pdfSubsetDocument() {
+  final full = _pdfDocument();
+
+  return full.copyWith(
+    pageSizes: full.pageSizes.where((page) => page.index != 0).toList(),
   );
 }
 

@@ -352,5 +352,9 @@
   "settings_privacyEncrypted": "Documents, presets and previews stay encrypted at rest in DocMark's private storage.",
   "settings_privacyExport": "Exported files leave DocMark's protection. Share them only with people you trust.",
   "export_pageNumber": "Page {page}",
-  "export_qualityPercent": "{percent}%"
+  "export_qualityPercent": "{percent}%",
+  "settings_biometrics": "فتح القفل بالبصمة",
+  "settings_biometricsBody": "استخدم بصمة إصبعك أو وجهك بدلًا من رمز PIN.",
+  "settings_biometricsEnabled": "فتح القفل بالبصمة مُفعّل.",
+  "settings_biometricsOff": "فتح القفل بالبصمة مُعطّل."
 }

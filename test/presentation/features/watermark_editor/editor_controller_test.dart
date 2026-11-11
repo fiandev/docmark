@@ -202,6 +202,56 @@ void main() {
         <String>[b.id, c.id],
       );
     });
+
+    test('a PDF subset enumerates and assigns only source pages', () {
+      final controller = build(
+        document: testDocument(
+          pageCount: 3,
+          pageIndexes: const <int>[1, 2],
+        ),
+      );
+
+      // pageCount is the imported subset, not the source total.
+      expect(controller.pageCount, 2);
+      expect(controller.pageSourceIndices, <int>[1, 2]);
+      expect(controller.pageIndex, 1);
+
+      controller.setPage(2);
+      expect(controller.pageIndex, 2);
+
+      final a = controller.addText(content: 'A')!;
+      controller.setElementPages(a.id, <int>{1});
+
+      expect(controller.config.pageAssignments.keys.toSet(), <int>{1, 2});
+      expect(
+        controller.config.elementsForPage(1).map((element) => element.id),
+        contains(a.id),
+      );
+      expect(
+        controller.config.elementsForPage(2).map((element) => element.id),
+        isNot(contains(a.id)),
+      );
+
+      controller.setElementPages(a.id, <int>{1, 2});
+      expect(controller.paintsEveryPage(a.id), isTrue);
+    });
+
+    test('an out-of-subset page request lands on the nearest source page', () {
+      final controller = build(
+        document: testDocument(
+          pageCount: 5,
+          pageIndexes: const <int>[2, 4],
+        ),
+      );
+
+      expect(controller.pageIndex, 2);
+
+      controller.setPage(3);
+      expect(controller.pageIndex, 4);
+
+      controller.setPage(0);
+      expect(controller.pageIndex, 2);
+    });
   });
 
   group('appearance', () {

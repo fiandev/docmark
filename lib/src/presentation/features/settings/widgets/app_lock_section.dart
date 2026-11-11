@@ -33,6 +33,7 @@ class AppLockSection extends ConsumerWidget {
     return SettingsCard(
       children: [
         SwitchListTile(
+          key: const ValueKey<String>('settings-app-lock-switch'),
           value: state.isEnabled,
           onChanged: (enabled) =>
               unawaited(_toggle(context, ref, enabled: enabled)),
@@ -48,6 +49,18 @@ class AppLockSection extends ConsumerWidget {
           ),
         ),
         if (state.isEnabled) ...[
+          SwitchListTile(
+            key: const ValueKey<String>('settings-biometrics-switch'),
+            value: state.biometricsEnabled,
+            onChanged: (enabled) =>
+                unawaited(_toggleBiometrics(context, ref, enabled: enabled)),
+            secondary: Icon(
+              Icons.fingerprint,
+              color: context.color.text.muted,
+            ),
+            title: LabelText(l10n.settings_biometrics),
+            subtitle: BodySmallText.muted(l10n.settings_biometricsBody),
+          ),
           ListTile(
             leading: Icon(
               Icons.password_outlined,
@@ -102,6 +115,26 @@ class AppLockSection extends ConsumerWidget {
     final result = await service.disableLock(pin);
     if (!context.mounted) return;
     _report(context, l10n, result, l10n.settings_appLockDisabled);
+  }
+
+  Future<void> _toggleBiometrics(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool enabled,
+  }) async {
+    final l10n = context.locale;
+    final result = await ref
+        .read(appLockServiceProvider)
+        .updateSettings(biometricsEnabled: enabled);
+    if (!context.mounted) return;
+    _report(
+      context,
+      l10n,
+      result,
+      enabled
+          ? l10n.settings_biometricsEnabled
+          : l10n.settings_biometricsOff,
+    );
   }
 
   Future<void> _changePin(BuildContext context, WidgetRef ref) async {

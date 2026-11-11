@@ -138,14 +138,14 @@ final class DocumentRepositoryImpl extends Repository
   ) {
     return asyncGuard(
       () async {
-        final document = await _documents.find(documentId);
-        if (document == null) throw _MissingDocument(documentId);
-        // Page identity is the source document's page numbering, not the
-        // subset the importer recorded: `ExportRequest.resolvedPages`
-        // walks 0..pageCount-1, so that is the range to accept here.
-        if (pageIndex < 0 || pageIndex >= document.pageCount) {
-          throw _MissingDocument('$documentId/$pageIndex');
+        if (await _documents.find(documentId) == null) {
+          throw _MissingDocument(documentId);
         }
+        // Page identity is the source document's page numbering, and only
+        // the pages the importer recorded in `document_pages` are readable:
+        // a PDF subset import has no row for a skipped source page.
+        final page = await _documents.findPage(documentId, pageIndex);
+        if (page == null) throw _MissingDocument('$documentId/$pageIndex');
         final source = await _documents.findSourceAsset(documentId);
         if (source == null) throw _MissingDocument(documentId);
 

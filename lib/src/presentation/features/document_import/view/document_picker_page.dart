@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gap/gap.dart';
 
+import '../../../../core/di/features/history_providers.dart';
 import '../../../../core/di/features/import_providers.dart';
+import '../../../../core/di/features/presets_providers.dart';
 import '../../../../core/extensions/localization.dart';
 import '../../../core/router/routes.dart';
 import '../../../../domain/entities/document.dart';
@@ -21,6 +23,10 @@ import '../controller/document_import_controller.dart';
 /// OWNER: T2 (import flow). The constructor signature is frozen; all
 /// plugins arrive through providers so widget tests can run without a
 /// platform channel.
+///
+/// The picker also owns the pending-preset hand-off: it keeps the id for
+/// the editor to consume, and clears it on cancel, failure, or an abandoned
+/// page so a stale preset cannot leak into a later import.
 class DocumentPickerPage extends ConsumerStatefulWidget {
   const DocumentPickerPage({super.key});
 
@@ -36,6 +42,7 @@ enum _PickerError { invalidFormat, failed }
 
 class _DocumentPickerPageState extends ConsumerState<DocumentPickerPage> {
   late final DocumentImportController _controller;
+  late final PendingPresetId _pendingPresets;
 
   _PickerStage _stage = _PickerStage.idle;
   _PickerError? _error;
@@ -43,12 +50,17 @@ class _DocumentPickerPageState extends ConsumerState<DocumentPickerPage> {
   int _pdfPageCount = 0;
   int _previewToken = 0;
 
+  /// Set once the import hands a document to the editor, so [dispose] knows
+  /// the pending preset was consumed rather than abandoned.
+  bool _handedOff = false;
+
   final Set<int> _selectedPages = <int>{};
   final Map<int, Uint8List> _thumbnails = <int, Uint8List>{};
 
   @override
   void initState() {
     super.initState();
+    _pendingPresets = ref.read(pendingPresetIdProvider.notifier);
     _controller = DocumentImportController(
       documents: ref.read(documentRepositoryProvider),
       normalizer: ref.read(mediaNormalizerServiceProvider),
@@ -58,9 +70,20 @@ class _DocumentPickerPageState extends ConsumerState<DocumentPickerPage> {
   }
 
   @override
+  void dispose() {
+    if (!_handedOff) _pendingPresets.clear();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          tooltip: context.locale.common_back,
+          onPressed: _dismiss,
+          icon: const Icon(Icons.arrow_back),
+        ),
         title: HeadingLevel3Text(context.locale.import_title),
       ),
       body: SafeArea(
@@ -73,7 +96,7 @@ class _DocumentPickerPageState extends ConsumerState<DocumentPickerPage> {
           selectedPages: _selectedPages,
           onGallery: () => unawaited(_pick(ImportSource.gallery)),
           onFiles: () => unawaited(_pick(ImportSource.filePicker)),
-          onDismiss: () => context.pop(),
+          onDismiss: _dismiss,
           onReset: _reset,
           onTogglePage: _togglePage,
           onImportSelected: _selectedPages.isEmpty
@@ -111,6 +134,7 @@ class _DocumentPickerPageState extends ConsumerState<DocumentPickerPage> {
       case ImportCancelled():
         _reset();
       case ImportNotSupported():
+        _pendingPresets.clear();
         setState(() {
           _stage = _PickerStage.error;
           _error = _PickerError.invalidFormat;
@@ -126,6 +150,7 @@ class _DocumentPickerPageState extends ConsumerState<DocumentPickerPage> {
       case ImportSucceeded(:final document):
         _open(document);
       case ImportFailed():
+        _pendingPresets.clear();
         setState(() {
           _stage = _PickerStage.error;
           _error = _PickerError.failed;
@@ -159,8 +184,10 @@ class _DocumentPickerPageState extends ConsumerState<DocumentPickerPage> {
       case ImportSucceeded(:final document):
         _open(document);
       case ImportCancelled():
+        _pendingPresets.clear();
         setState(() => _stage = _PickerStage.selectingPages);
       default:
+        _pendingPresets.clear();
         setState(() {
           _stage = _PickerStage.error;
           _error = _PickerError.failed;
@@ -189,6 +216,7 @@ class _DocumentPickerPageState extends ConsumerState<DocumentPickerPage> {
 
   void _reset() {
     if (!mounted) return;
+    _pendingPresets.clear();
     setState(() {
       _stage = _PickerStage.idle;
       _error = null;
@@ -200,7 +228,23 @@ class _DocumentPickerPageState extends ConsumerState<DocumentPickerPage> {
     });
   }
 
+  /// Leaves the picker: pops when there is a page underneath, otherwise
+  /// returns to Home so an entry point that replaced the stack is never a
+  /// dead end.
+  void _dismiss() {
+    _pendingPresets.clear();
+    if (Navigator.of(context).canPop()) {
+      context.pop();
+    } else {
+      context.goNamed(Routes.home.name);
+    }
+  }
+
   void _open(DocumentEntity document) {
+    // The editor consumes the pending preset; leave it in place.
+    _handedOff = true;
+    // A successful import changes what Home's recent strip is built from.
+    ref.invalidate(recentDocumentsProvider);
     context.goNamed(
       Routes.editor.name,
       pathParameters: <String, String>{'documentId': document.id},
@@ -254,7 +298,7 @@ class _PickerBody extends StatelessWidget {
               thumbnails: thumbnails,
               selectedPages: selectedPages,
               onTogglePage: onTogglePage,
-              onCancel: onReset,
+              onCancel: onDismiss,
               onImportSelected: onImportSelected,
             )
           : _IdleView(

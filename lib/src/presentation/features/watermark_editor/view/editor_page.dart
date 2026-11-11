@@ -255,6 +255,20 @@ class _EditorScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          tooltip: context.locale.common_back,
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            final navigator = Navigator.of(context);
+            if (navigator.canPop()) {
+              navigator.pop();
+            } else {
+              // A deep link can open the editor as the only page; never
+              // leave the user without a way back to the shell.
+              context.goNamed(Routes.home.name);
+            }
+          },
+        ),
         title: HeadingLevel3Text(title),
         actions: actions,
       ),

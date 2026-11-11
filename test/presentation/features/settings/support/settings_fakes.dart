@@ -189,6 +189,17 @@ final class FakeAppLockService implements AppLockService {
       }
     }
 
+    if (biometricsEnabled != null) {
+      final secret = _state.secret;
+      if (secret != null) {
+        _emit(
+          _state.copyWith(
+            secret: secret.copyWith(biometricsEnabled: biometricsEnabled),
+          ),
+        );
+      }
+    }
+
     return const Success(Unit.value);
   }
 

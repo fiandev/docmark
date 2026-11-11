@@ -58,6 +58,7 @@ final class ExportController {
     required ExportFileWriter fileWriter,
     String Function()? newId,
     DateTime Function()? clock,
+    void Function()? onExported,
   }) : _request = request,
        _renderer = renderer,
        _documents = documents,
@@ -65,7 +66,8 @@ final class ExportController {
        _history = history,
        _fileWriter = fileWriter,
        _newId = newId ?? _defaultId,
-       _clock = clock ?? _defaultClock;
+       _clock = clock ?? _defaultClock,
+       _onExported = onExported;
 
   final ExportRequest _request;
   final WatermarkRenderer _renderer;
@@ -75,6 +77,10 @@ final class ExportController {
   final ExportFileWriter _fileWriter;
   final String Function() _newId;
   final DateTime Function() _clock;
+
+  /// Called after a successful export has been recorded in history, so the
+  /// owning screen can refresh cross-feature caches.
+  final void Function()? _onExported;
 
   int get pageCount => _request.resolvedPages.length;
 
@@ -119,6 +125,8 @@ final class ExportController {
     }
 
     final vaultRef = await _persist(files.first.result);
+    // The history row exists now; the History and Home lists are stale.
+    _onExported?.call();
 
     return ExportBundle(files: files, vaultRef: vaultRef);
   }

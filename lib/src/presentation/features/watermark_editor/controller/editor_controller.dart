@@ -88,9 +88,16 @@ final class EditorController extends ChangeNotifier {
   }
 
   /// The page the preview shows and new elements are placed on.
+  ///
+  /// This is a SOURCE page index, matching [pageSourceIndices] entries.
   int get pageIndex => _pageIndex;
 
-  int get pageCount => _document.pageCount;
+  /// The pages this document actually carries, as source indices.
+  List<int> get pageSourceIndices => _document.pageSourceIndices;
+
+  /// The imported page count, which a PDF subset may make smaller than the
+  /// source document's `pageCount`.
+  int get pageCount => _document.pageSourceIndices.length;
 
   /// Elements painted on the current page, in paint order.
   List<WatermarkElement> get elementsForCurrentPage =>
@@ -141,7 +148,8 @@ final class EditorController extends ChangeNotifier {
   void setElementPages(String id, Set<int> pages) {
     if (_indexOf(id) < 0) return;
 
-    final all = <int>{for (var i = 0; i < pageCount; i++) i};
+    final sources = _document.pageSourceIndices;
+    final all = sources.toSet();
     final wanted = pages.intersection(all);
     final current = _config.pageAssignments;
     final next = <int, List<String>>{};
@@ -159,12 +167,12 @@ final class EditorController extends ChangeNotifier {
     _commit(_config.copyWith(pageAssignments: next));
   }
 
-  /// Whether [id] paints on every page.
+  /// Whether [id] paints on every imported page.
   bool paintsEveryPage(String id) {
     final assignments = _config.pageAssignments;
     if (assignments.isEmpty) return true;
 
-    for (var page = 0; page < pageCount; page++) {
+    for (final page in _document.pageSourceIndices) {
       if (!(assignments[page] ?? const <String>[]).contains(id)) return false;
     }
 
@@ -613,10 +621,21 @@ final class EditorController extends ChangeNotifier {
     );
   }
 
+  /// Clamps a requested SOURCE page index to one the document carries.
+  ///
+  /// A subset import has no row for the skipped sources, so the nearest
+  /// imported page at or above [index] wins (the last page when past the
+  /// end).
   static int _pageWithin(DocumentEntity document, int index) {
-    if (document.pageCount <= 0) return 0;
+    final sources = document.pageSourceIndices;
+    if (sources.isEmpty) return 0;
+    if (sources.contains(index)) return index;
 
-    return index.clamp(0, document.pageCount - 1).toInt();
+    for (final source in sources) {
+      if (source >= index) return source;
+    }
+
+    return sources.last;
   }
 
   static double _normalizeDegrees(double degrees) {

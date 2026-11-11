@@ -352,5 +352,9 @@
   "settings_privacyEncrypted": "Documents, presets and previews stay encrypted at rest in DocMark's private storage.",
   "settings_privacyExport": "Exported files leave DocMark's protection. Share them only with people you trust.",
   "export_pageNumber": "Page {page}",
-  "export_qualityPercent": "{percent}%"
+  "export_qualityPercent": "{percent}%",
+  "settings_biometrics": "বায়োমেট্রিক দিয়ে আনলক করুন",
+  "settings_biometricsBody": "পিনের বদলে আপনার ফিঙ্গারপ্রিন্ট বা মুখ ব্যবহার করুন।",
+  "settings_biometricsEnabled": "বায়োমেট্রিক আনলক চালু আছে।",
+  "settings_biometricsOff": "বায়োমেট্রিক আনলক বন্ধ আছে।"
 }

@@ -154,6 +154,37 @@ void main() {
       },
     );
 
+    test('an empty selection rebuilds the imported subset only', () async {
+      final loader = _RecordingPageLoader();
+      final rasterizer = _FakeRasterizer(<int, Size>{
+        1: const Size(200, 500),
+        2: const Size(250, 350),
+      });
+      final composer = _RecordingComposer();
+      final renderer = _renderer(
+        pageLoader: loader.call,
+        rasterizer: rasterizer,
+        composer: composer,
+      );
+      final full = _pdfDocument(<int, Size>{
+        0: const Size(300, 400),
+        1: const Size(200, 500),
+        2: const Size(250, 350),
+      });
+      final subset = full.copyWith(
+        pageSizes: full.pageSizes
+            .where((page) => page.index != 0)
+            .toList(),
+      );
+
+      await renderer.renderPdfPdf(
+        ExportRequest(document: subset, config: WatermarkConfig.empty),
+      );
+
+      expect(loader.calls, <int>[1, 2]);
+      expect(composer.pages, hasLength(2));
+    });
+
     test('a page loader read never mutates the source bytes', () async {
       final original = Uint8List.fromList(<int>[
         0x25,

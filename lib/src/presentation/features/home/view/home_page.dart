@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
@@ -43,7 +45,7 @@ class HomePage extends ConsumerWidget {
             _SectionHeading(
               title: l10n.home_recent,
               action: l10n.home_viewAll,
-              onAction: () => _go(context, Routes.history),
+              onAction: () => _openHistory(context),
             ),
             Gap(context.dimensions.space.s8),
             switch (recent) {
@@ -79,19 +81,28 @@ class HomePage extends ConsumerWidget {
   }
 
   void _go(BuildContext context, Routes route) {
-    context.goNamed(route.name);
+    // Push non-tab destinations so the shell stays in the stack and back
+    // always has somewhere to return to.
+    unawaited(context.pushNamed(route.name));
+  }
+
+  void _openHistory(BuildContext context) {
+    // History is a shell tab: switching branches keeps the tab bar state.
+    context.goNamed(Routes.history.name);
   }
 
   void _open(BuildContext context, HistoryEntryEntity entry) {
     final documentId = entry.documentId;
     if (documentId == null || documentId.isEmpty) {
-      _go(context, Routes.history);
+      _openHistory(context);
       return;
     }
 
-    context.goNamed(
-      Routes.editor.name,
-      pathParameters: {'documentId': documentId},
+    unawaited(
+      context.pushNamed(
+        Routes.editor.name,
+        pathParameters: {'documentId': documentId},
+      ),
     );
   }
 }

@@ -164,7 +164,7 @@ class _PositionSection extends StatelessWidget {
             onChanged: (onlyThisPage) {
               final pages = onlyThisPage
                   ? <int>{controller.pageIndex}
-                  : <int>{for (var i = 0; i < controller.pageCount; i++) i};
+                  : controller.pageSourceIndices.toSet();
               controller.setElementPages(id, pages);
             },
           ),

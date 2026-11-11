@@ -30,10 +30,10 @@ enum AppLockSetupMode {
 
 /// The App Lock setup / change-PIN / disable flow.
 ///
-/// T7 wires the entry point from Settings by calling the controller methods
-/// on `appLockServiceProvider`; because features are import-isolated, this
-/// page stays inside the feature and is mounted by an in-feature route when
-/// one is added. The security work lives in the controller either way.
+/// Intentionally unwired for now (dead code): Settings enables the lock
+/// through `appLockServiceProvider.enableLock` directly and exposes the
+/// biometrics toggle in its own section, so no route mounts this page yet.
+/// The security work lives in the controller either way.
 class AppLockSetupPage extends ConsumerStatefulWidget {
   const AppLockSetupPage({required this.mode, super.key});
 

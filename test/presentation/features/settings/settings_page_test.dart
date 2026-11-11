@@ -69,7 +69,9 @@ void main() {
       await pumpSettings(tester, service: service);
       expect(find.text('App Lock is off'), findsOneWidget);
 
-      await tester.tap(find.byType(SwitchListTile));
+      await tester.tap(
+        find.byKey(const ValueKey<String>('settings-app-lock-switch')),
+      );
       await tester.pumpAndSettle();
 
       final fields = find.byType(TextField);
@@ -96,7 +98,9 @@ void main() {
       await pumpSettings(tester, service: service);
       expect(find.text('App Lock is on'), findsOneWidget);
 
-      await tester.tap(find.byType(SwitchListTile));
+      await tester.tap(
+        find.byKey(const ValueKey<String>('settings-app-lock-switch')),
+      );
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField), '123456');
@@ -106,6 +110,27 @@ void main() {
       expect(service.disableCalls, 1);
       expect(service.state.status, LockStatus.disabled);
       expect(find.text('App Lock is off'), findsOneWidget);
+    });
+
+    testWidgets('the biometrics switch updates the service setting', (
+      tester,
+    ) async {
+      final service = FakeAppLockService(
+        enabled: true,
+        initialPin: '123456',
+      );
+
+      await pumpSettings(tester, service: service);
+      expect(find.text('Unlock with biometrics'), findsOneWidget);
+      expect(service.state.biometricsEnabled, isFalse);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('settings-biometrics-switch')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(service.updateSettingsCalls, 1);
+      expect(service.state.biometricsEnabled, isTrue);
     });
   });
 

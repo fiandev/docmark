@@ -528,5 +528,9 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "settings_biometrics": "Unlock with biometrics",
+    "settings_biometricsBody": "Use your fingerprint or face instead of the PIN.",
+    "settings_biometricsEnabled": "Biometric unlock is on.",
+    "settings_biometricsOff": "Biometric unlock is off."
 }

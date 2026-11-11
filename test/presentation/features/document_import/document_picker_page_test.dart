@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:flutter_template/src/core/di/features/import_providers.dart';
+import 'package:flutter_template/src/core/di/features/presets_providers.dart';
 import 'package:flutter_template/src/core/gen/l10n/app_localizations.dart';
 import 'package:flutter_template/src/presentation/core/router/routes.dart';
 import 'package:flutter_template/src/presentation/core/theme/theme.dart';
@@ -123,6 +124,65 @@ void main() {
       expect(picker.gallery!.bytes, snapshot);
       expect(router.state.uri.path, '/document-picker');
     });
+
+    testWidgets('cancelling clears the pending preset and returns home', (
+      tester,
+    ) async {
+      final router = _router();
+
+      await tester.pumpWidget(
+        _app(
+          router: router,
+          repository: RecordingDocumentRepository(),
+          picker: FakeDocumentPickService(),
+          preview: FakePdfPagePreviewService(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(DocumentPickerPage)),
+        listen: false,
+      );
+      container.read(pendingPresetIdProvider.notifier).set('preset-1');
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(container.read(pendingPresetIdProvider), isNull);
+      expect(router.state.uri.path, Routes.home.path);
+    });
+
+    testWidgets('a successful import keeps the preset for the editor', (
+      tester,
+    ) async {
+      final picker = FakeDocumentPickService(
+        gallery: PickedDocument(fileName: 'photo.png', bytes: pngBytes()),
+      );
+      final router = _router();
+
+      await tester.pumpWidget(
+        _app(
+          router: router,
+          repository: RecordingDocumentRepository(),
+          picker: picker,
+          preview: FakePdfPagePreviewService(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(DocumentPickerPage)),
+        listen: false,
+      );
+      container.read(pendingPresetIdProvider.notifier).set('preset-1');
+
+      await tester.tap(find.text('Choose from Gallery'));
+      await tester.pumpAndSettle();
+
+      expect(router.state.uri.path, '/editor/doc-1');
+      expect(container.read(pendingPresetIdProvider), 'preset-1');
+    });
   });
 }
 
@@ -158,6 +218,11 @@ GoRouter _router() {
   return GoRouter(
     initialLocation: Routes.documentPicker.path,
     routes: <RouteBase>[
+      GoRoute(
+        path: Routes.home.path,
+        name: Routes.home.name,
+        builder: (context, state) => const Scaffold(body: Text('home')),
+      ),
       GoRoute(
         path: Routes.documentPicker.path,
         name: Routes.documentPicker.name,
