@@ -1,0 +1,30 @@
+Montserrat — licence notice
+===========================
+
+Bundled files
+-------------
+assets/fonts/montserrat/Montserrat-Regular.ttf
+assets/fonts/montserrat/Montserrat-Bold.ttf
+assets/fonts/montserrat/Montserrat-Italic.ttf
+assets/fonts/montserrat/Montserrat-BoldItalic.ttf
+
+Copyright
+---------
+Copyright 2011 The Montserrat Project Authors
+(https://github.com/JulietaUlanovsky/Montserrat)
+
+Licence
+-------
+SIL Open Font License, Version 1.1. The full licence text is the file
+OFL-1.1.txt in this directory and governs these font files.
+
+Upstream
+--------
+Project: https://github.com/JulietaUlanovsky/Montserrat
+Ref:     master (static faces under fonts/ttf)
+Fetched: tool/fetch_fonts.sh — see assets/fonts/README.md
+
+Changes
+-------
+None. The bundled files are the unmodified upstream static faces; each
+SHA-256 is pinned in assets/fonts/FONT_MANIFEST.json.
