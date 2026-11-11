@@ -1,0 +1,32 @@
+Roboto — licence notice
+=======================
+
+Bundled files
+-------------
+assets/fonts/roboto/Roboto-Regular.ttf
+assets/fonts/roboto/Roboto-Bold.ttf
+assets/fonts/roboto/Roboto-Italic.ttf
+assets/fonts/roboto/Roboto-BoldItalic.ttf
+
+Copyright
+---------
+Copyright 2011 Google Inc. All Rights Reserved.
+
+Licence
+-------
+Apache License, Version 2.0. The full licence text is the file Apache-2.0.txt
+in this directory and governs these font files.
+
+Upstream
+--------
+Project: https://github.com/googlefonts/roboto
+Ref:     v2.138 (static faces from the release archive)
+Fetched: tool/fetch_fonts.sh — see assets/fonts/README.md
+
+Changes
+-------
+None. The bundled files are the unmodified upstream static faces; each
+SHA-256 is pinned in assets/fonts/FONT_MANIFEST.json.
+
+No NOTICE file accompanies the Roboto release; the copyright line above is the
+attribution Apache-2.0 section 4(d) asks us to carry.

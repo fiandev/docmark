@@ -1,0 +1,29 @@
+Inter — licence notice
+======================
+
+Bundled files
+-------------
+assets/fonts/inter/Inter-Regular.ttf
+assets/fonts/inter/Inter-Bold.ttf
+assets/fonts/inter/Inter-Italic.ttf
+assets/fonts/inter/Inter-BoldItalic.ttf
+
+Copyright
+---------
+Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter)
+
+Licence
+-------
+SIL Open Font License, Version 1.1. The full licence text is the file
+OFL-1.1.txt in this directory and governs these font files.
+
+Upstream
+--------
+Project: https://github.com/rsms/inter
+Ref:     v4.1 (static faces from the release archive)
+Fetched: tool/fetch_fonts.sh — see assets/fonts/README.md
+
+Changes
+-------
+None. The bundled files are the unmodified upstream static faces; each
+SHA-256 is pinned in assets/fonts/FONT_MANIFEST.json.

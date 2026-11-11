@@ -1,0 +1,240 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "tool/fetch_fonts.sh",
+  "updatedBy": "tool/fetch_fonts.sh rewrites every sha256 field once it has downloaded and hashed the file",
+  "notes": [
+    "Every path below must match FontRegistry.catalog in lib/src/domain/services/font_registry.dart; test/fonts/font_asset_manifest_test.dart enforces that.",
+    "sha256 is null in the repository on purpose: no one may invent a hash. run `sh tool/fetch_fonts.sh` to download the upstream files, record their hashes here, and then `sh tool/verify_fonts.sh` to prove the bytes are real fonts.",
+    "A non-null sha256 makes the fetch reproducible: tool/fetch_fonts.sh refuses to install a file whose bytes differ from the recorded hash, so silent upstream re-releases (or a corrupted download) fail loudly."
+  ],
+  "families": [
+    {
+      "token": "inter",
+      "family": "Inter",
+      "license": "OFL-1.1",
+      "licenseFile": "assets/fonts/LICENSES/OFL-1.1.txt",
+      "noticeFile": "assets/fonts/LICENSES/Inter-OFL-1.1.txt",
+      "copyright": "Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter)",
+      "upstreamProject": "https://github.com/rsms/inter",
+      "upstreamRef": "v4.1",
+      "files": [
+        {
+          "path": "assets/fonts/inter/Inter-Regular.ttf",
+          "face": "regular",
+          "sha256": null,
+          "upstreamUrl": "https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip"
+        },
+        {
+          "path": "assets/fonts/inter/Inter-Bold.ttf",
+          "face": "bold",
+          "sha256": null,
+          "upstreamUrl": "https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip"
+        },
+        {
+          "path": "assets/fonts/inter/Inter-Italic.ttf",
+          "face": "italic",
+          "sha256": null,
+          "upstreamUrl": "https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip"
+        },
+        {
+          "path": "assets/fonts/inter/Inter-BoldItalic.ttf",
+          "face": "boldItalic",
+          "sha256": null,
+          "upstreamUrl": "https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip"
+        }
+      ]
+    },
+    {
+      "token": "roboto",
+      "family": "Roboto",
+      "license": "Apache-2.0",
+      "licenseFile": "assets/fonts/LICENSES/Apache-2.0.txt",
+      "noticeFile": "assets/fonts/LICENSES/Roboto-Apache-2.0.txt",
+      "copyright": "Copyright 2011 Google Inc. All Rights Reserved.",
+      "upstreamProject": "https://github.com/googlefonts/roboto",
+      "upstreamRef": "v2.138",
+      "files": [
+        {
+          "path": "assets/fonts/roboto/Roboto-Regular.ttf",
+          "face": "regular",
+          "sha256": null,
+          "upstreamUrl": "https://github.com/googlefonts/roboto/releases/download/v2.138/roboto-unhinted.zip"
+        },
+        {
+          "path": "assets/fonts/roboto/Roboto-Bold.ttf",
+          "face": "bold",
+          "sha256": null,
+          "upstreamUrl": "https://github.com/googlefonts/roboto/releases/download/v2.138/roboto-unhinted.zip"
+        },
+        {
+          "path": "assets/fonts/roboto/Roboto-Italic.ttf",
+          "face": "italic",
+          "sha256": null,
+          "upstreamUrl": "https://github.com/googlefonts/roboto/releases/download/v2.138/roboto-unhinted.zip"
+        },
+        {
+          "path": "assets/fonts/roboto/Roboto-BoldItalic.ttf",
+          "face": "boldItalic",
+          "sha256": null,
+          "upstreamUrl": "https://github.com/googlefonts/roboto/releases/download/v2.138/roboto-unhinted.zip"
+        }
+      ]
+    },
+    {
+      "token": "robotoMono",
+      "family": "Roboto Mono",
+      "license": "OFL-1.1",
+      "licenseFile": "assets/fonts/LICENSES/OFL-1.1.txt",
+      "noticeFile": "assets/fonts/LICENSES/RobotoMono-OFL-1.1.txt",
+      "copyright": "Copyright 2015 The Roboto Mono Project Authors (https://github.com/googlefonts/RobotoMono)",
+      "upstreamProject": "https://github.com/googlefonts/RobotoMono",
+      "upstreamRef": "main",
+      "files": [
+        {
+          "path": "assets/fonts/roboto_mono/RobotoMono-Regular.ttf",
+          "face": "regular",
+          "sha256": null,
+          "upstreamUrl": "https://raw.githubusercontent.com/googlefonts/RobotoMono/main/fonts/ttf/RobotoMono-Regular.ttf"
+        },
+        {
+          "path": "assets/fonts/roboto_mono/RobotoMono-Bold.ttf",
+          "face": "bold",
+          "sha256": null,
+          "upstreamUrl": "https://raw.githubusercontent.com/googlefonts/RobotoMono/main/fonts/ttf/RobotoMono-Bold.ttf"
+        },
+        {
+          "path": "assets/fonts/roboto_mono/RobotoMono-Italic.ttf",
+          "face": "italic",
+          "sha256": null,
+          "upstreamUrl": "https://raw.githubusercontent.com/googlefonts/RobotoMono/main/fonts/ttf/RobotoMono-Italic.ttf"
+        },
+        {
+          "path": "assets/fonts/roboto_mono/RobotoMono-BoldItalic.ttf",
+          "face": "boldItalic",
+          "sha256": null,
+          "upstreamUrl": "https://raw.githubusercontent.com/googlefonts/RobotoMono/main/fonts/ttf/RobotoMono-BoldItalic.ttf"
+        }
+      ]
+    },
+    {
+      "token": "montserrat",
+      "family": "Montserrat",
+      "license": "OFL-1.1",
+      "licenseFile": "assets/fonts/LICENSES/OFL-1.1.txt",
+      "noticeFile": "assets/fonts/LICENSES/Montserrat-OFL-1.1.txt",
+      "copyright": "Copyright 2011 The Montserrat Project Authors (https://github.com/JulietaUlanovsky/Montserrat)",
+      "upstreamProject": "https://github.com/JulietaUlanovsky/Montserrat",
+      "upstreamRef": "master",
+      "files": [
+        {
+          "path": "assets/fonts/montserrat/Montserrat-Regular.ttf",
+          "face": "regular",
+          "sha256": null,
+          "upstreamUrl": "https://raw.githubusercontent.com/JulietaUlanovsky/Montserrat/master/fonts/ttf/Montserrat-Regular.ttf"
+        },
+        {
+          "path": "assets/fonts/montserrat/Montserrat-Bold.ttf",
+          "face": "bold",
+          "sha256": null,
+          "upstreamUrl": "https://raw.githubusercontent.com/JulietaUlanovsky/Montserrat/master/fonts/ttf/Montserrat-Bold.ttf"
+        },
+        {
+          "path": "assets/fonts/montserrat/Montserrat-Italic.ttf",
+          "face": "italic",
+          "sha256": null,
+          "upstreamUrl": "https://raw.githubusercontent.com/JulietaUlanovsky/Montserrat/master/fonts/ttf/Montserrat-Italic.ttf"
+        },
+        {
+          "path": "assets/fonts/montserrat/Montserrat-BoldItalic.ttf",
+          "face": "boldItalic",
+          "sha256": null,
+          "upstreamUrl": "https://raw.githubusercontent.com/JulietaUlanovsky/Montserrat/master/fonts/ttf/Montserrat-BoldItalic.ttf"
+        }
+      ]
+    },
+    {
+      "token": "lora",
+      "family": "Lora",
+      "license": "OFL-1.1",
+      "licenseFile": "assets/fonts/LICENSES/OFL-1.1.txt",
+      "noticeFile": "assets/fonts/LICENSES/Lora-OFL-1.1.txt",
+      "copyright": "Copyright 2011 The Lora Project Authors (https://github.com/cyrealtype/Lora-Cyrillic), with Reserved Font Name \"Lora\".",
+      "upstreamProject": "https://github.com/cyrealtype/Lora-Cyrillic",
+      "upstreamRef": "master",
+      "files": [
+        {
+          "path": "assets/fonts/lora/Lora-Regular.ttf",
+          "face": "regular",
+          "sha256": null,
+          "upstreamUrl": "https://raw.githubusercontent.com/cyrealtype/Lora-Cyrillic/master/fonts/ttf/Lora-Regular.ttf"
+        },
+        {
+          "path": "assets/fonts/lora/Lora-Bold.ttf",
+          "face": "bold",
+          "sha256": null,
+          "upstreamUrl": "https://raw.githubusercontent.com/cyrealtype/Lora-Cyrillic/master/fonts/ttf/Lora-Bold.ttf"
+        },
+        {
+          "path": "assets/fonts/lora/Lora-Italic.ttf",
+          "face": "italic",
+          "sha256": null,
+          "upstreamUrl": "https://raw.githubusercontent.com/cyrealtype/Lora-Cyrillic/master/fonts/ttf/Lora-Italic.ttf"
+        },
+        {
+          "path": "assets/fonts/lora/Lora-BoldItalic.ttf",
+          "face": "boldItalic",
+          "sha256": null,
+          "upstreamUrl": "https://raw.githubusercontent.com/cyrealtype/Lora-Cyrillic/master/fonts/ttf/Lora-BoldItalic.ttf"
+        }
+      ]
+    },
+    {
+      "token": "merriweather",
+      "family": "Merriweather",
+      "license": "OFL-1.1",
+      "licenseFile": "assets/fonts/LICENSES/OFL-1.1.txt",
+      "noticeFile": "assets/fonts/LICENSES/Merriweather-OFL-1.1.txt",
+      "copyright": "Copyright 2016 The Merriweather Project Authors (https://github.com/SorkinType/Merriweather)",
+      "upstreamProject": "https://github.com/SorkinType/Merriweather",
+      "upstreamRef": "master",
+      "files": [
+        {
+          "path": "assets/fonts/merriweather/Merriweather-Regular.ttf",
+          "face": "regular",
+          "sha256": null,
+          "upstreamUrl": "https://raw.githubusercontent.com/SorkinType/Merriweather/master/fonts/ttf/Merriweather-Regular.ttf"
+        },
+        {
+          "path": "assets/fonts/merriweather/Merriweather-Bold.ttf",
+          "face": "bold",
+          "sha256": null,
+          "upstreamUrl": "https://raw.githubusercontent.com/SorkinType/Merriweather/master/fonts/ttf/Merriweather-Bold.ttf"
+        },
+        {
+          "path": "assets/fonts/merriweather/Merriweather-Italic.ttf",
+          "face": "italic",
+          "sha256": null,
+          "upstreamUrl": "https://raw.githubusercontent.com/SorkinType/Merriweather/master/fonts/ttf/Merriweather-Italic.ttf"
+        }
+      ]
+    },
+    {
+      "token": "caveat",
+      "family": "Caveat",
+      "license": "OFL-1.1",
+      "licenseFile": "assets/fonts/LICENSES/OFL-1.1.txt",
+      "noticeFile": "assets/fonts/LICENSES/Caveat-OFL-1.1.txt",
+      "copyright": "Copyright 2014 The Caveat Project Authors (https://github.com/googlefonts/caveat)",
+      "upstreamProject": "https://github.com/googlefonts/caveat",
+      "upstreamRef": "master",
+      "files": [
+        {
+          "path": "assets/fonts/caveat/Caveat-Regular.ttf",
+          "face": "regular",
+          "sha256": null,
+          "upstreamUrl": "https://raw.githubusercontent.com/googlefonts/caveat/master/fonts/ttf/Caveat-Regular.ttf"
+        }
+      ]
+    }
+  ]
+}

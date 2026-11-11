@@ -1,0 +1,35 @@
+Lora — licence notice
+=====================
+
+Bundled files
+-------------
+assets/fonts/lora/Lora-Regular.ttf
+assets/fonts/lora/Lora-Bold.ttf
+assets/fonts/lora/Lora-Italic.ttf
+assets/fonts/lora/Lora-BoldItalic.ttf
+
+Copyright
+---------
+Copyright 2011 The Lora Project Authors
+(https://github.com/cyrealtype/Lora-Cyrillic), with Reserved Font Name "Lora".
+
+Licence
+-------
+SIL Open Font License, Version 1.1. The full licence text is the file
+OFL-1.1.txt in this directory and governs these font files.
+
+Reserved Font Name
+------------------
+"Lora". OFL-1.1 condition 3 applies: a Modified Version must not use the
+reserved name. DocMark ships only unmodified files, so the name stays.
+
+Upstream
+--------
+Project: https://github.com/cyrealtype/Lora-Cyrillic
+Ref:     master (static faces under fonts/ttf)
+Fetched: tool/fetch_fonts.sh — see assets/fonts/README.md
+
+Changes
+-------
+None. The bundled files are the unmodified upstream static faces; each
+SHA-256 is pinned in assets/fonts/FONT_MANIFEST.json.
