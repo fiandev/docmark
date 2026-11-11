@@ -290,5 +290,6 @@
   "failures_permissionDenied": "DocMark does not have permission to access those files.",
   "failures_corruptFile": "The file is damaged and cannot be opened.",
   "failures_unsupportedFormat": "That file format is not supported.",
-  "failures_diskFull": "There is not enough free space on this device."
+  "failures_diskFull": "There is not enough free space on this device.",
+  "presets_nameRequired": "A preset name is required."
 }
