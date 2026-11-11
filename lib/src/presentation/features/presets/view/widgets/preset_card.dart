@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 
 import '../../../../../core/extensions/localization.dart';
-import '../../../../../core/theme/theme.dart';
-import '../../../../../core/widgets/text/typography.dart';
+import '../../../../core/theme/theme.dart';
+import '../../../../core/widgets/text/typography.dart';
 import '../../../../../domain/entities/preset.dart';
 import 'preset_preview.dart';
 

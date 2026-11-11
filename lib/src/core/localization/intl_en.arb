@@ -512,5 +512,21 @@
     "settings_allDataDeleted": "All app data deleted.",
     "settings_privacyLocal": "Every watermark is added on this device. Nothing is uploaded.",
     "settings_privacyEncrypted": "Documents, presets and previews stay encrypted at rest in DocMark's private storage.",
-    "settings_privacyExport": "Exported files leave DocMark's protection. Share them only with people you trust."
+    "settings_privacyExport": "Exported files leave DocMark's protection. Share them only with people you trust.",
+    "export_pageNumber": "Page {page}",
+    "@export_pageNumber": {
+        "placeholders": {
+            "page": {
+                "type": "int"
+            }
+        }
+    },
+    "export_qualityPercent": "{percent}%",
+    "@export_qualityPercent": {
+        "placeholders": {
+            "percent": {
+                "type": "int"
+            }
+        }
+    }
 }

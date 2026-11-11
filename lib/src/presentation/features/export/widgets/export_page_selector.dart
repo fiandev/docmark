@@ -123,7 +123,7 @@ class _PageTile extends StatelessWidget {
                       color: context.color.docMark.selection,
                     ),
                   if (selected) Gap(context.dimensions.space.s4),
-                  LabelText('${page + 1}'),
+                  LabelText(context.locale.export_pageNumber(page + 1)),
                 ],
               ),
             ),

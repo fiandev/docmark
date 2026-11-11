@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 
-import '../../../core/extensions/localization.dart';
+import '../../../../core/extensions/localization.dart';
 import '../../../core/theme/theme.dart';
 
 /// The editor's bottom bar: add a text or image element, or open the
