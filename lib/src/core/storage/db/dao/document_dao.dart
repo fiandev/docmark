@@ -65,9 +65,9 @@ final class DocumentDao {
   }
 
   Future<void> insertPages(List<DocumentPageRow> rows) async {
-    await _db.batch((batch) {
-      batch.insertAll(_db.documentPages, rows);
-    });
+    for (final row in rows) {
+      await _db.into(_db.documentPages).insert(row);
+    }
   }
 
   Future<void> insertSourceAsset(DocumentAssetRow row) async {
