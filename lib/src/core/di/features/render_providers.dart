@@ -12,9 +12,9 @@ import '../../../data/services/render/pdf_page_rasterizer.dart';
 import '../../../data/services/render/watermark_renderer_impl.dart';
 import '../../../domain/services/render_contract.dart';
 import '../../../presentation/core/widgets/watermark/watermark_canvas.dart';
-import '../../security/secure_file_vault.dart';
 import 'import_providers.dart';
 import 'security_providers.dart';
+import 'storage_providers.dart';
 
 part 'render_providers.g.dart';
 
@@ -36,6 +36,10 @@ ExportSettings exportSettings(Ref ref) => ExportSettings();
 PdfPageRasterizer pdfPageRasterizer(Ref ref) => const PdfrxPageRasterizer();
 
 /// Renders previews and export bytes. Never writes plaintext to disk.
+///
+/// Image watermarks are stored under a generated blob name, so an id is
+/// resolved to its blob path through the asset store before the vault is
+/// read.
 @Riverpod(keepAlive: true)
 WatermarkRenderer watermarkRenderer(Ref ref) {
   return WatermarkRendererImpl(
@@ -54,13 +58,13 @@ WatermarkRenderer watermarkRenderer(Ref ref) {
       };
     },
     assetLoader: (assetId) async {
+      final store = ref.read(watermarkAssetStoreProvider);
+      final reference = await store.refFor(assetId);
+      if (reference == null) return null;
       final vault = ref.read(secureFileVaultProvider);
-      // The vault stores assets under their id; the relative path is
-      // resolved by the vault implementation.
-      final handle = AssetRef(id: assetId, relativePath: assetId);
-      if (!await vault.exists(handle)) return null;
+      if (!await vault.exists(reference)) return null;
 
-      return vault.read(handle);
+      return vault.read(reference);
     },
     jpegQuality: () => ref.read(exportSettingsProvider).jpegQuality,
   );
