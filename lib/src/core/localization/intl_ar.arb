@@ -302,5 +302,13 @@
   "editor_assetUnavailable": "The image is not available.",
   "editor_color_hex": "Hex colour",
   "editor_layersEmpty": "No elements yet. Add text or an image to start.",
-  "presets_nameRequired": "A preset name is required."
+  "presets_nameRequired": "A preset name is required.",
+  "history_previewTitle": "Processed preview",
+  "history_previewUnavailable": "The preview could not be loaded.",
+  "history_originalMissing": "The original document is no longer available.",
+  "history_importToReuse": "Import a document to apply this watermark configuration.",
+  "history_importDocument": "Import document",
+  "history_deleteFailed": "The entry could not be deleted.",
+  "history_clearFailed": "History could not be cleared.",
+  "history_cleared": "History cleared."
 }
