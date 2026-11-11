@@ -1,5 +1,6 @@
 part of '../router.dart';
 
+/// The persistent tab shell: Home, Presets, History.
 StatefulShellRoute _shellRoutes(Ref ref) {
   return StatefulShellRoute.indexedStack(
     builder: (context, state, navigationShell) {
@@ -20,10 +21,21 @@ StatefulShellRoute _shellRoutes(Ref ref) {
       StatefulShellBranch(
         routes: [
           GoRoute(
-            path: Routes.profile.path,
-            name: Routes.profile.name,
+            path: Routes.presets.path,
+            name: Routes.presets.name,
             pageBuilder: (context, state) {
-              return const MaterialPage(child: ProfilePage());
+              return const MaterialPage(child: PresetsPage());
+            },
+          ),
+        ],
+      ),
+      StatefulShellBranch(
+        routes: [
+          GoRoute(
+            path: Routes.history.path,
+            name: Routes.history.name,
+            pageBuilder: (context, state) {
+              return const MaterialPage(child: HistoryPage());
             },
           ),
         ],

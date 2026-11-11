@@ -6,8 +6,3 @@ CacheService cacheService(Ref ref) {
     ref.watch(sharedPreferencesProvider).requireValue,
   );
 }
-
-@Riverpod(keepAlive: true)
-RestClient restClientService(Ref ref) {
-  return RestClient(ref.watch(networkStackProvider).transport);
-}

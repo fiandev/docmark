@@ -43,6 +43,22 @@ class ColorExtension extends ThemeExtension<ColorExtension> {
         dangerTint: _Red.s50,
         information: _Blue.s500,
         informationTint: _Blue.s50,
+      ),
+      docMark = const ColorDocMark._(
+        elementHandle: _Neutral.s0,
+        elementHandleBorder: _Brand.s500,
+        selection: _Brand.s500,
+        rotationHandle: _Brand.s600,
+        checkerboardLight: _Neutral.s200,
+        checkerboardDark: _Neutral.s0,
+        cropScrim: _Overlay.scrimLight,
+        cropHandle: _Neutral.s0,
+        cropGuide: _Overlay.guide,
+        defaultWatermarkText: _Neutral.s900,
+        defaultWatermarkOutline: _Neutral.s0,
+        defaultWatermarkBackground: _Neutral.s900,
+        lockCardBackground: _Neutral.s0,
+        lockCardBorder: _Neutral.s200,
       );
 
   const ColorExtension.dark()
@@ -79,6 +95,22 @@ class ColorExtension extends ThemeExtension<ColorExtension> {
         dangerTint: _Red.s900,
         information: _Blue.s500,
         informationTint: _Blue.s900,
+      ),
+      docMark = const ColorDocMark._(
+        elementHandle: _Neutral.s100,
+        elementHandleBorder: _Brand.s400,
+        selection: _Brand.s400,
+        rotationHandle: _Brand.s400,
+        checkerboardLight: _Neutral.s700,
+        checkerboardDark: _Neutral.s800,
+        cropScrim: _Overlay.scrimDark,
+        cropHandle: _Neutral.s0,
+        cropGuide: _Overlay.guide,
+        defaultWatermarkText: _Neutral.s100,
+        defaultWatermarkOutline: _Neutral.s900,
+        defaultWatermarkBackground: _Neutral.s100,
+        lockCardBackground: _Neutral.s900,
+        lockCardBorder: _Neutral.s700,
       );
 
   const ColorExtension._({
@@ -88,6 +120,7 @@ class ColorExtension extends ThemeExtension<ColorExtension> {
     required this.border,
     required this.background,
     required this.status,
+    required this.docMark,
   });
 
   /// Which mode these bindings serve. [ThemeData] reads it so the two stay
@@ -100,6 +133,10 @@ class ColorExtension extends ThemeExtension<ColorExtension> {
   final ColorBackground background;
   final ColorStatus status;
 
+  /// Editor and security-surface tokens. Feature code reads these instead
+  /// of literals: handles, selection, checkerboard, crop scrim, lock card.
+  final ColorDocMark docMark;
+
   @override
   ColorExtension copyWith({
     ColorPrimary? primary,
@@ -107,6 +144,7 @@ class ColorExtension extends ThemeExtension<ColorExtension> {
     ColorBorder? border,
     ColorBackground? background,
     ColorStatus? status,
+    ColorDocMark? docMark,
   }) {
     return ColorExtension._(
       brightness: brightness,
@@ -115,6 +153,7 @@ class ColorExtension extends ThemeExtension<ColorExtension> {
       border: border ?? this.border,
       background: background ?? this.background,
       status: status ?? this.status,
+      docMark: docMark ?? this.docMark,
     );
   }
 
@@ -131,6 +170,7 @@ class ColorExtension extends ThemeExtension<ColorExtension> {
       border: ColorBorder._lerp(border, other.border, t),
       background: ColorBackground._lerp(background, other.background, t),
       status: ColorStatus._lerp(status, other.status, t),
+      docMark: ColorDocMark._lerp(docMark, other.docMark, t),
     );
   }
 }
@@ -274,6 +314,93 @@ final class ColorStatus {
       dangerTint: Color.lerp(a.dangerTint, b.dangerTint, t)!,
       information: Color.lerp(a.information, b.information, t)!,
       informationTint: Color.lerp(a.informationTint, b.informationTint, t)!,
+    );
+  }
+}
+
+/// Editor and App Lock surfaces.
+///
+/// These are the tokens the watermark overlay and the lock screen read so
+/// no widget has to name a colour: the selection frame, the eight handles,
+/// the transparency checkerboard, the crop scrim and guides, the default
+/// watermark ink, and the lock card.
+final class ColorDocMark {
+  const ColorDocMark._({
+    required this.elementHandle,
+    required this.elementHandleBorder,
+    required this.selection,
+    required this.rotationHandle,
+    required this.checkerboardLight,
+    required this.checkerboardDark,
+    required this.cropScrim,
+    required this.cropHandle,
+    required this.cropGuide,
+    required this.defaultWatermarkText,
+    required this.defaultWatermarkOutline,
+    required this.defaultWatermarkBackground,
+    required this.lockCardBackground,
+    required this.lockCardBorder,
+  });
+
+  final Color elementHandle;
+  final Color elementHandleBorder;
+  final Color selection;
+  final Color rotationHandle;
+  final Color checkerboardLight;
+  final Color checkerboardDark;
+  final Color cropScrim;
+  final Color cropHandle;
+  final Color cropGuide;
+  final Color defaultWatermarkText;
+  final Color defaultWatermarkOutline;
+  final Color defaultWatermarkBackground;
+  final Color lockCardBackground;
+  final Color lockCardBorder;
+
+  static ColorDocMark _lerp(ColorDocMark a, ColorDocMark b, double t) {
+    return ColorDocMark._(
+      elementHandle: Color.lerp(a.elementHandle, b.elementHandle, t)!,
+      elementHandleBorder: Color.lerp(
+        a.elementHandleBorder,
+        b.elementHandleBorder,
+        t,
+      )!,
+      selection: Color.lerp(a.selection, b.selection, t)!,
+      rotationHandle: Color.lerp(a.rotationHandle, b.rotationHandle, t)!,
+      checkerboardLight: Color.lerp(
+        a.checkerboardLight,
+        b.checkerboardLight,
+        t,
+      )!,
+      checkerboardDark: Color.lerp(
+        a.checkerboardDark,
+        b.checkerboardDark,
+        t,
+      )!,
+      cropScrim: Color.lerp(a.cropScrim, b.cropScrim, t)!,
+      cropHandle: Color.lerp(a.cropHandle, b.cropHandle, t)!,
+      cropGuide: Color.lerp(a.cropGuide, b.cropGuide, t)!,
+      defaultWatermarkText: Color.lerp(
+        a.defaultWatermarkText,
+        b.defaultWatermarkText,
+        t,
+      )!,
+      defaultWatermarkOutline: Color.lerp(
+        a.defaultWatermarkOutline,
+        b.defaultWatermarkOutline,
+        t,
+      )!,
+      defaultWatermarkBackground: Color.lerp(
+        a.defaultWatermarkBackground,
+        b.defaultWatermarkBackground,
+        t,
+      )!,
+      lockCardBackground: Color.lerp(
+        a.lockCardBackground,
+        b.lockCardBackground,
+        t,
+      )!,
+      lockCardBorder: Color.lerp(a.lockCardBorder, b.lockCardBorder, t)!,
     );
   }
 }

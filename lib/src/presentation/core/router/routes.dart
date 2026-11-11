@@ -5,21 +5,19 @@
 /// exhaustive.
 ///
 /// Top-level routes carry absolute paths (leading `/`). Sub-routes carry
-/// relative segments and nest under their parent in the route tree — their
-/// full location is the joined path (e.g. `/login/registration`).
+/// relative segments and nest under their parent in the route tree.
 enum Routes {
   splash('/splash'),
   onboarding('/onboarding'),
-
-  login('/login'),
-  registration('registration'),
-  resetPassword('reset-password'),
-  emailVerification('email-verification'),
-  createNewPassword('create-new-password'),
-  resetPasswordSuccess('reset-password-success'),
+  lock('/lock'),
 
   home('/home'),
-  profile('/profile');
+  documentPicker('/document-picker'),
+  editor('/editor/:documentId'),
+  presets('/presets'),
+  history('/history'),
+  exportPreview('/export-preview'),
+  settings('/settings');
 
   const Routes(this.path);
 

@@ -1,8 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_template/src/core/di/features/app_lock_providers.dart';
+import 'package:flutter_template/src/core/security/lock_controller.dart';
 import 'package:flutter_template/src/presentation/core/application_state/onboarding_status_provider/onboarding_status_provider.dart';
-import 'package:flutter_template/src/presentation/core/application_state/session_status_provider/session_status_provider.dart';
 import 'package:flutter_template/src/presentation/core/application_state/startup_provider/startup_provider.dart';
 import 'package:flutter_template/src/presentation/core/router/router_state/router_state_provider.dart';
 import 'package:flutter_template/src/presentation/core/router/routes.dart';
@@ -12,14 +13,14 @@ void main() {
   ProviderContainer containerWith({
     required Future<void> Function(Ref ref) startup,
     bool onboarded = true,
-    Future<SessionStatus> Function(Ref ref)? session,
+    LockStatus lock = LockStatus.disabled,
   }) {
     final container = ProviderContainer(
       retry: (retryCount, error) => null,
       overrides: [
         startupProvider.overrideWith(startup),
         onboardingStatusProvider.overrideWith((ref) => onboarded),
-        if (session != null) sessionStatusProvider.overrideWith(session),
+        appLockStatusProvider.overrideWith((ref) => lock),
       ],
     );
     addTearDown(container.dispose);
@@ -57,36 +58,42 @@ void main() {
       expect(container.read(routerStateProvider), Routes.onboarding);
     });
 
-    test('splash while the session status is loading', () async {
-      final container = containerWith(
-        startup: startupDone,
-        session: (ref) => Completer<SessionStatus>().future,
-      );
+    test('home when App Lock is disabled', () async {
+      final container = containerWith(startup: startupDone);
       await container.read(startupProvider.future);
-
-      expect(container.read(routerStateProvider), Routes.splash);
-    });
-
-    test('login when unauthenticated', () async {
-      final container = containerWith(
-        startup: startupDone,
-        session: (ref) async => SessionStatus.unauthenticated,
-      );
-      await container.read(startupProvider.future);
-      await container.read(sessionStatusProvider.future);
-
-      expect(container.read(routerStateProvider), Routes.login);
-    });
-
-    test('home when authenticated', () async {
-      final container = containerWith(
-        startup: startupDone,
-        session: (ref) async => SessionStatus.authenticated,
-      );
-      await container.read(startupProvider.future);
-      await container.read(sessionStatusProvider.future);
 
       expect(container.read(routerStateProvider), Routes.home);
+    });
+
+    test('home when App Lock is unlocked', () async {
+      final container = containerWith(
+        startup: startupDone,
+        lock: LockStatus.unlocked,
+      );
+      await container.read(startupProvider.future);
+
+      expect(container.read(routerStateProvider), Routes.home);
+    });
+
+    test('lock when App Lock is locked', () async {
+      final container = containerWith(
+        startup: startupDone,
+        lock: LockStatus.locked,
+      );
+      await container.read(startupProvider.future);
+
+      expect(container.read(routerStateProvider), Routes.lock);
+    });
+
+    test('lock wins over onboarding completion', () async {
+      final container = containerWith(
+        startup: startupDone,
+        onboarded: true,
+        lock: LockStatus.locked,
+      );
+      await container.read(startupProvider.future);
+
+      expect(container.read(routerStateProvider), Routes.lock);
     });
   });
 }

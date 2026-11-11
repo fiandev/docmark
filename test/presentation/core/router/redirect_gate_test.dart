@@ -8,7 +8,11 @@ void main() {
       test('pins every path to splash', () {
         expect(RedirectGate.redirect('/', Routes.splash), '/splash');
         expect(RedirectGate.redirect('/home', Routes.splash), '/splash');
-        expect(RedirectGate.redirect('/login', Routes.splash), '/splash');
+        expect(RedirectGate.redirect('/lock', Routes.splash), '/splash');
+        expect(
+          RedirectGate.redirect('/editor/doc-1', Routes.splash),
+          '/splash',
+        );
         expect(RedirectGate.redirect('/unknown', Routes.splash), '/splash');
       });
 
@@ -24,7 +28,7 @@ void main() {
           '/onboarding',
         );
         expect(
-          RedirectGate.redirect('/login', Routes.onboarding),
+          RedirectGate.redirect('/lock', Routes.onboarding),
           '/onboarding',
         );
       });
@@ -34,45 +38,42 @@ void main() {
       });
     });
 
-    group('login gate (unauthenticated)', () {
-      test('allows the whole auth flow', () {
-        expect(RedirectGate.redirect('/login', Routes.login), isNull);
+    group('lock gate (App Lock locked)', () {
+      test('pins every route to the lock screen', () {
+        expect(RedirectGate.redirect('/', Routes.lock), '/lock');
+        expect(RedirectGate.redirect('/home', Routes.lock), '/lock');
+        expect(RedirectGate.redirect('/presets', Routes.lock), '/lock');
+        expect(RedirectGate.redirect('/history', Routes.lock), '/lock');
+        expect(RedirectGate.redirect('/settings', Routes.lock), '/lock');
         expect(
-          RedirectGate.redirect('/login/registration', Routes.login),
-          isNull,
+          RedirectGate.redirect('/editor/doc-1', Routes.lock),
+          '/lock',
         );
-        expect(
-          RedirectGate.redirect(
-            '/login/reset-password/create-new-password',
-            Routes.login,
-          ),
-          isNull,
-        );
+        expect(RedirectGate.redirect('/splash', Routes.lock), '/lock');
+        expect(RedirectGate.redirect('/onboarding', Routes.lock), '/lock');
       });
 
-      test('sends everything else to login', () {
-        expect(RedirectGate.redirect('/home', Routes.login), '/login');
-        expect(RedirectGate.redirect('/profile', Routes.login), '/login');
-        expect(RedirectGate.redirect('/splash', Routes.login), '/login');
-        expect(RedirectGate.redirect('/', Routes.login), '/login');
+      test('is idempotent at lock', () {
+        expect(RedirectGate.redirect('/lock', Routes.lock), isNull);
       });
     });
 
-    group('home gate (authenticated)', () {
+    group('home gate (App Lock disabled or unlocked)', () {
       test('keeps in-app navigation free', () {
         expect(RedirectGate.redirect('/home', Routes.home), isNull);
-        expect(RedirectGate.redirect('/profile', Routes.home), isNull);
+        expect(RedirectGate.redirect('/document-picker', Routes.home), isNull);
+        expect(RedirectGate.redirect('/editor/doc-1', Routes.home), isNull);
+        expect(RedirectGate.redirect('/presets', Routes.home), isNull);
+        expect(RedirectGate.redirect('/history', Routes.home), isNull);
+        expect(RedirectGate.redirect('/export-preview', Routes.home), isNull);
+        expect(RedirectGate.redirect('/settings', Routes.home), isNull);
         expect(RedirectGate.redirect('/unknown', Routes.home), isNull);
       });
 
       test('bounces gate-only routes home', () {
-        expect(RedirectGate.redirect('/login', Routes.home), '/home');
-        expect(
-          RedirectGate.redirect('/login/registration', Routes.home),
-          '/home',
-        );
         expect(RedirectGate.redirect('/splash', Routes.home), '/home');
         expect(RedirectGate.redirect('/onboarding', Routes.home), '/home');
+        expect(RedirectGate.redirect('/lock', Routes.home), '/home');
         expect(RedirectGate.redirect('/', Routes.home), '/home');
       });
     });

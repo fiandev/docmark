@@ -49,3 +49,12 @@ abstract final class _Blue {
   static const Color s500 = Color(0xFF1971C2);
   static const Color s900 = Color(0xFF11293C);
 }
+
+/// Translucent overlay inks for the editor canvas and crop UI. The leading
+/// byte is the alpha; the hue matches the neutral ramp so a scrim never
+/// shifts the page's colour temperature.
+abstract final class _Overlay {
+  static const Color scrimLight = Color(0x66212529);
+  static const Color scrimDark = Color(0x99000000);
+  static const Color guide = Color(0xCCFFFFFF);
+}

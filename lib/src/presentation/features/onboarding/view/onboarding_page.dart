@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 
+import '../../../../core/constants/storage_keys.dart';
 import '../../../../core/di/dependency_injection.dart';
 import '../../../../core/extensions/localization.dart';
 import '../../../core/application_state/onboarding_status_provider/onboarding_status_provider.dart';
@@ -28,8 +29,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage>
     _pageController = PageController();
   }
 
-  void _onGetStarted() {
-    ref.read(markOnboardingCompletedUseCaseProvider).call();
+  Future<void> _onGetStarted() async {
+    final prefs = ref.read(sharedPreferencesProvider).requireValue;
+    await prefs.setBool(StorageKeys.onboardingCompleted, true);
+
+    if (!mounted) return;
     ref.invalidate(onboardingStatusProvider);
   }
 

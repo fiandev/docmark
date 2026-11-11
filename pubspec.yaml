@@ -1,62 +1,64 @@
 name: flutter_template
-description: "A new Flutter project."
+description: "DocMark — secure, local-first document watermarking."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 # The following defines the version and build number for your application.
-# A version number is three numbers separated by dots, like 1.2.43
-# followed by an optional build number separated by a +.
-# Both the version and the builder number may be overridden in flutter
-# build by specifying --build-name and --build-number, respectively.
-# In Android, build-name is used as versionName while build-number used as versionCode.
-# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
-# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
-# Read more about iOS versioning at
-# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-# In Windows, build-name is used as the major, minor, and patch parts
-# of the product and file versions while build-number is used as the build suffix.
 version: 1.0.0+1
 
 environment:
   sdk: ^3.13.0
 
-# Dependencies specify other packages that your package needs in order to work.
-# To automatically upgrade your package dependencies to the latest versions
-# consider running `flutter pub upgrade --major-versions`. Alternatively,
-# dependencies can be manually updated by changing the version numbers below to
-# the latest version available on pub.dev. To see which dependencies have newer
-# versions available, run `flutter pub outdated`.
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
   # UI
   cupertino_icons: ^1.0.9
   gap: ^3.0.1
+  flutter_svg: ^2.3.0
+
   # State management
   flutter_riverpod: ^3.3.2
+  riverpod_annotation: ^4.0.3
+
   # Navigation
   go_router: ^17.4.0
-  # Cache & Database
+
+  # Persistence
   shared_preferences: ^2.5.5
   flutter_secure_storage: ^11.0.0
-  # Generator and Annotations
-  riverpod_annotation: ^4.0.3
+  drift: ^2.35.4
+  sqlite3: ^3.9.1
+  sqlcipher_flutter_libs: ^0.6.8
+
+  # Security
+  cryptography: ^2.9.0
+  local_auth: ^3.0.2
+
+  # Files, media and export
+  file_picker: ^13.3.3
+  image_picker: ^1.2.4
+  image: ^4.12.0
+  path: ^1.9.1
+  path_provider: ^2.1.6
+  share_plus: ^13.3.1
+  pdf: ^3.13.1
+  pdfrx: ^2.12.0
+  uuid: ^4.6.0
+
+  # Generator and annotations
   freezed_annotation: ^3.1.0
-  # Media
-  flutter_svg: ^2.3.0
+  dart_mappable: ^4.8.0
+
   # Logging
   logger: ^2.7.0
-  pretty_dio_logger: ^1.4.0
-  # Serialization & Deserialization
-  dart_mappable: ^4.8.0
-  # Networking
-  retrofit: ^4.9.2
-  dio: ^5.11.0
+
   # Localization
   intl: ^0.20.2
-  flutter_localizations:
-    sdk: flutter
 
 dev_dependencies:
   flutter_test:
@@ -67,15 +69,13 @@ dev_dependencies:
   riverpod_generator: ^4.0.4
   flutter_gen_runner: ^5.15.0
   dart_mappable_builder: ^4.9.0
-  retrofit_generator: ^10.2.8
+  drift_dev: ^2.35.3
   # WHY: freezed 3 emits `final` on a generated constructor parameter, which
   # Dart 3.13 rejects — the 4.0.0-dev line is the first that stops emitting it,
   # so the pre-release pin is what makes the app compile at all. It carries the
   # codegen chain to analyzer 13, which is why dart_mappable_builder is on 4.9.
   # Move to a plain caret when freezed 4 ships stable.
   freezed: ^4.0.0-dev.3
-  # Testing
-  http_mock_adapter: ^0.6.1
 
 flutter:
   uses-material-design: true
@@ -84,6 +84,80 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - assets/fonts/inter/
+    - assets/fonts/roboto/
+    - assets/fonts/roboto_mono/
+    - assets/fonts/montserrat/
+    - assets/fonts/lora/
+    - assets/fonts/merriweather/
+    - assets/fonts/caveat/
+    - assets/fonts/LICENSES/
+
+  # WHY: the six bundled families and their faces. T9 replaces every
+  # placeholder byte with the real font file; the family names and asset
+  # paths below are the frozen contract every editor screen reads through
+  # `FontRegistry`.
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/inter/Inter-Regular.ttf
+        - asset: assets/fonts/inter/Inter-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/inter/Inter-Italic.ttf
+          style: italic
+        - asset: assets/fonts/inter/Inter-BoldItalic.ttf
+          weight: 700
+          style: italic
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/roboto/Roboto-Regular.ttf
+        - asset: assets/fonts/roboto/Roboto-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/roboto/Roboto-Italic.ttf
+          style: italic
+        - asset: assets/fonts/roboto/Roboto-BoldItalic.ttf
+          weight: 700
+          style: italic
+    - family: Roboto Mono
+      fonts:
+        - asset: assets/fonts/roboto_mono/RobotoMono-Regular.ttf
+        - asset: assets/fonts/roboto_mono/RobotoMono-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/roboto_mono/RobotoMono-Italic.ttf
+          style: italic
+        - asset: assets/fonts/roboto_mono/RobotoMono-BoldItalic.ttf
+          weight: 700
+          style: italic
+    - family: Montserrat
+      fonts:
+        - asset: assets/fonts/montserrat/Montserrat-Regular.ttf
+        - asset: assets/fonts/montserrat/Montserrat-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/montserrat/Montserrat-Italic.ttf
+          style: italic
+        - asset: assets/fonts/montserrat/Montserrat-BoldItalic.ttf
+          weight: 700
+          style: italic
+    - family: Lora
+      fonts:
+        - asset: assets/fonts/lora/Lora-Regular.ttf
+        - asset: assets/fonts/lora/Lora-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/lora/Lora-Italic.ttf
+          style: italic
+        - asset: assets/fonts/lora/Lora-BoldItalic.ttf
+          weight: 700
+          style: italic
+    - family: Merriweather
+      fonts:
+        - asset: assets/fonts/merriweather/Merriweather-Regular.ttf
+        - asset: assets/fonts/merriweather/Merriweather-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/merriweather/Merriweather-Italic.ttf
+          style: italic
+    - family: Caveat
+      fonts:
+        - asset: assets/fonts/caveat/Caveat-Regular.ttf
 
 
 flutter_gen:

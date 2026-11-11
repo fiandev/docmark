@@ -1,17 +1,3 @@
-enum CacheKey {
-  isOnBoardingCompleted,
-
-  /// Set at login only when the user asked to be remembered. Read at
-  /// startup by `restoreSession` to decide whether a previous run's
-  /// tokens survive. Not the session source of truth — the stored
-  /// refresh token is.
-  isLoggedIn,
-
-  /// The "Remember Me" checkbox preference, persisted for the UI.
-  rememberMe,
-  language,
-}
-
 /// Key-value persistence for small app state, keyed by [CacheKey] so
 /// every stored name lives in one enum instead of scattered strings.
 ///
@@ -19,6 +5,15 @@ enum CacheKey {
 /// implementations throw [ArgumentError] on anything else rather than
 /// coercing. Anything richer belongs in a real store, not a preference
 /// cache.
+enum CacheKey {
+  /// Whether the first-run onboarding slides have been completed.
+  onboardingCompleted,
+
+  /// The persisted UI language code.
+  language,
+}
+
+/// The storage contract behind [CacheKey].
 abstract class CacheService {
   Future<void> save<T>(CacheKey key, T value);
 

@@ -1,8 +1,5 @@
 global_options:
   dart_mappable_builder:
-    runs_before:
-      # list the generator packages you depend on, e.g.
-      - retrofit_generator
     options:
       # ... other dart_mappable options
       renameMethods:

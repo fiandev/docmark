@@ -1,5 +1,6 @@
 package com.dinurymomshad.flutter_template
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity()
+// WHY: local_auth needs a FragmentActivity host for its BiometricPrompt.
+class MainActivity : FlutterFragmentActivity()

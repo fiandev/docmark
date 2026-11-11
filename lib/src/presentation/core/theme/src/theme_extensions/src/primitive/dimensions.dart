@@ -18,6 +18,7 @@ abstract final class _DimensionPrimitive {
   static const double v32 = 32;
   static const double v44 = 44;
   static const double v48 = 48;
+  static const double v56 = 56;
   static const double v66 = 66;
   static const double v80 = 80;
   static const double v100 = 100;

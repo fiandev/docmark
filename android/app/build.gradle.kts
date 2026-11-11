@@ -22,7 +22,9 @@ android {
         applicationId = "com.dinurymomshad.flutter_template"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // WHY: local_auth needs API 23 for the biometric prompt and
+        // sqlcipher_flutter_libs needs 23 for its native SQLCipher build.
+        minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

@@ -17,6 +17,10 @@ class DimensionsExtension extends ThemeExtension<DimensionsExtension> {
   final DimensionLayout layout = const DimensionLayout._();
   final DimensionBreakpoint breakpoint = const DimensionBreakpoint._();
 
+  /// Editor canvas and App Lock measurements. Kept apart from the general
+  /// scale because only the overlay and the lock card consume them.
+  final DimensionDocMark docMark = const DimensionDocMark._();
+
   /// The scale is fixed, so there is nothing to copy.
   @override
   ThemeExtension<DimensionsExtension> copyWith() {
@@ -167,4 +171,47 @@ final class DimensionBreakpoint {
   final double mobile = _DimensionPrimitive.v390;
   final double tablet = _DimensionPrimitive.v768;
   final double desktop = _DimensionPrimitive.v1440;
+}
+
+/// Measurements owned by the watermark canvas and App Lock.
+///
+/// `minElementSize` is normalized (a fraction of the page), matching the
+/// coordinate space the geometry functions use; the rest are logical
+/// pixels.
+final class DimensionDocMark {
+  const DimensionDocMark._();
+
+  /// The visible square of a resize handle.
+  final double elementHandle = _DimensionPrimitive.v12;
+
+  /// The invisible tap target around a handle — never smaller than the
+  /// accessibility minimum.
+  final double elementHandleTouch = _DimensionPrimitive.v24;
+
+  /// Selection frame stroke.
+  final double selectionStroke = _DimensionPrimitive.v1_5;
+
+  final double rotationHandle = _DimensionPrimitive.v12;
+  final double rotationHandleOffset = _DimensionPrimitive.v32;
+
+  /// Height of the editor's bottom toolbar.
+  final double toolbarHeight = _DimensionPrimitive.v56;
+
+  final double panelPadding = _DimensionPrimitive.v16;
+  final double panelGap = _DimensionPrimitive.v8;
+  final double panelRadius = _DimensionPrimitive.v16;
+
+  final double lockCardRadius = _DimensionPrimitive.v16;
+  final double lockCardPadding = _DimensionPrimitive.v24;
+  final double lockCardMaxWidth = _DimensionPrimitive.v390;
+
+  /// The smallest an element may be resized to, as a fraction of the page.
+  final double minElementSize = 0.05;
+
+  final double cropHandle = _DimensionPrimitive.v16;
+  final double cropHandleTouch = _DimensionPrimitive.v32;
+  final double cropGuideStroke = _DimensionPrimitive.v1;
+
+  /// One square of the transparency checkerboard.
+  final double checkerboardTile = _DimensionPrimitive.v8;
 }
