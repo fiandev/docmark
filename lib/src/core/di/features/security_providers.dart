@@ -1,97 +1,49 @@
 /// OWNER: T1 (security core).
 ///
-/// Frozen DI contract for envelope encryption, the key manager, and the
-/// secure file vault. T1 replaces the placeholder bodies with the real
-/// implementations; the provider names and return types below are the
-/// contract every other feature reads.
+/// Envelope encryption, the key manager, and the secure file vault.
+/// Provider names and return types are the frozen contract every other
+/// feature reads.
 library;
 
-import 'dart:typed_data';
+import 'dart:io';
 
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../security/encryption_service.dart';
 import '../../security/key_manager.dart';
+import '../../security/key_manager_impl.dart';
 import '../../security/secure_file_vault.dart';
+import '../../security/src/aes_gcm_encryption_service.dart';
+import '../../security/src/flutter_secure_key_value_store.dart';
+import '../../storage/vault/secure_file_vault_impl.dart';
 
 part 'security_providers.g.dart';
 
 /// The long-lived key-encryption key owner.
 @Riverpod(keepAlive: true)
-KeyManager keyManager(Ref ref) => const _UnavailableKeyManager();
+KeyManager keyManager(Ref ref) =>
+    KeyManagerImpl(store: FlutterSecureKeyValueStore());
 
 /// AES-256-GCM envelope encryption.
 @Riverpod(keepAlive: true)
-EncryptionService encryptionService(Ref ref) =>
-    const _UnavailableEncryptionService();
+EncryptionService encryptionService(Ref ref) => AesGcmEncryptionService();
 
 /// Encrypted-at-rest storage for documents and watermark images.
 @Riverpod(keepAlive: true)
-SecureFileVault secureFileVault(Ref ref) => const _UnavailableSecureFileVault();
+SecureFileVault secureFileVault(Ref ref) => SecureFileVaultImpl(
+  encryption: ref.watch(encryptionServiceProvider),
+  keyManager: ref.watch(keyManagerProvider),
+  rootDirectory: vaultDirectory,
+);
 
-class _UnavailableKeyManager implements KeyManager {
-  const _UnavailableKeyManager();
+/// Vault root inside private application storage.
+///
+/// `documents` is the app's own container on both platforms; nothing in
+/// it is exposed to other apps, and the blobs are encrypted besides.
+Future<Directory> vaultDirectory() async {
+  final documents = await getApplicationDocumentsDirectory();
 
-  @override
-  Future<AesKey> createOrGetKek() =>
-      throw UnimplementedError('KeyManager is implemented by T1');
-}
-
-class _UnavailableEncryptionService implements EncryptionService {
-  const _UnavailableEncryptionService();
-
-  @override
-  AesKey generateDataKey() =>
-      throw UnimplementedError('EncryptionService is implemented by T1');
-
-  @override
-  Future<EncryptedPayload> encrypt({
-    required Uint8List plaintext,
-    required AesKey key,
-  }) => throw UnimplementedError('EncryptionService is implemented by T1');
-
-  @override
-  Future<Uint8List> decrypt({
-    required EncryptedPayload payload,
-    required AesKey key,
-  }) => throw UnimplementedError('EncryptionService is implemented by T1');
-
-  @override
-  Future<WrappedKey> wrapKey({
-    required AesKey keyEncryptionKey,
-    required AesKey dataKey,
-  }) => throw UnimplementedError('EncryptionService is implemented by T1');
-
-  @override
-  Future<AesKey> unwrapKey({
-    required AesKey keyEncryptionKey,
-    required WrappedKey wrapped,
-  }) => throw UnimplementedError('EncryptionService is implemented by T1');
-}
-
-class _UnavailableSecureFileVault implements SecureFileVault {
-  const _UnavailableSecureFileVault();
-
-  @override
-  Future<AssetRef> put({
-    required Uint8List bytes,
-    required String extension,
-    String? assetId,
-  }) => throw UnimplementedError('SecureFileVault is implemented by T1');
-
-  @override
-  Future<Uint8List> read(AssetRef ref) =>
-      throw UnimplementedError('SecureFileVault is implemented by T1');
-
-  @override
-  Future<bool> exists(AssetRef ref) =>
-      throw UnimplementedError('SecureFileVault is implemented by T1');
-
-  @override
-  Future<void> delete(AssetRef ref) =>
-      throw UnimplementedError('SecureFileVault is implemented by T1');
-
-  @override
-  Future<void> deleteAll() =>
-      throw UnimplementedError('SecureFileVault is implemented by T1');
+  return Directory(p.join(documents.path, 'docmark_vault'));
 }
