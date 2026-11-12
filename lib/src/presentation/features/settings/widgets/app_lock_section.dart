@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gap/gap.dart';
 
 import '../../../../core/base/base.dart';
 import '../../../../core/di/features/app_lock_providers.dart';
@@ -10,7 +9,7 @@ import '../../../../core/extensions/localization.dart';
 import '../../../../core/gen/l10n/app_localizations.dart';
 import '../../../../core/security/lock/app_lock_failure.dart';
 import '../../../../core/security/lock/app_lock_service.dart';
-import '../../../../core/security/lock/lock_controller.dart';
+import '../../../../core/security/lock_controller.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/text/typography.dart';
 import 'pin_entry_dialog.dart';

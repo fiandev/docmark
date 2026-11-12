@@ -1,3 +1,5 @@
+import 'package:drift/drift.dart';
+
 import '../app_database.dart';
 
 /// The vault asset registry: watermark images, their wrapped data keys,

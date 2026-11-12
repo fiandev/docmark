@@ -42,7 +42,7 @@ final class WatermarkAssetStore {
     final reference = await _vault.put(bytes: bytes, extension: extension);
     final vault = _vault;
     final wrapped = vault is WrappedKeyReader
-        ? await vault.wrappedKeyBase64(reference)
+        ? await (vault as WrappedKeyReader).wrappedKeyBase64(reference)
         : null;
     await _assets.upsert(
       WatermarkAssetRow(
@@ -129,7 +129,7 @@ final class WatermarkAssetStore {
     );
     final vault = _vault;
     final wrapped = vault is WrappedKeyReader
-        ? await vault.wrappedKeyBase64(reference)
+        ? await (vault as WrappedKeyReader).wrappedKeyBase64(reference)
         : null;
     await _assets.upsert(
       WatermarkAssetRow(

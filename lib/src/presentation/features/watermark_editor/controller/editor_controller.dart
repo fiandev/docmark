@@ -458,8 +458,8 @@ final class EditorController extends ChangeNotifier {
         _document.id,
         snapshot,
       );
-      if (result is Error) {
-        _saveFailure = result.error;
+      if (result case Error(:final error)) {
+        _saveFailure = error;
         _dirty = true;
       } else {
         _saveFailure = null;
